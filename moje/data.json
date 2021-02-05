@@ -1,0 +1,19 @@
+{
+    "on": false,
+    "testID": 107,
+    "timeconf": "2021-02-03 23:17:37.675420",
+    "onconf": 3.78,
+    "offconf": 123,
+    "speed": 1,
+    "temperature1": 1,
+    "temperature2": 1,
+    "temperature3": 1,
+    "temperature4": 1,
+    "temperature5": 1,
+    "temperature6": 1,
+    "temperature7": 1,
+    "temperature8": 1,
+    "status": false,
+    "started": "2021-02-03 23:17:25.716082",
+    "finished": "2021-02-03 23:17:25.716082"
+}
