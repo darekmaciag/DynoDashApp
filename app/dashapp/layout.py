@@ -6,7 +6,8 @@ import dash_daq as daq
 import dash_bootstrap_components as dbc
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from app.dashapp.sensors import JSONS
+from app.dashapp.sensors import JSONS, Database
+from dash_daq import DarkThemeProvider
 
 axis_color = {"dark": "#EBF0F8", "light": "#506784"}
 marker_color = {"dark": "#f2f5fa", "light": "#2a3f5f"}
@@ -18,12 +19,26 @@ theme = {
     "detail": "#D3D3D3",
 }
 
+
+def get_sensor_types():
+    sql = """
+        --Get the labels and underlying values for the dropdown menu "children"
+        SELECT 
+            distinct 
+            id as label,
+            id as value
+        FROM tests
+        ORDER BY id DESC;
+    """
+    with Database() as db:
+        types = db.query(sql)
+        db.close 
+        return types
+
+
+
 def get_navbar():
     return html.Div(
-    id="main-page",
-    children=[
-        # Header
-        html.Div(
             id="header",
             className="banner row",
             children=[
@@ -40,15 +55,17 @@ def get_navbar():
                         ),
                     ],
                 ),
+                html.Div(
+                    className="row toggleDiv",
+                    children=daq.ToggleSwitch(
+                        id="toggleTheme", size=40, value=False, color="#00418e"
+                    ),
+                ),
             ],
-        ),
-    ],
-)
+        )
 
 
-def power_setting_div():
-    jsontimeconf = JSONS().readconfjson()['timeconf']
-    (h, m, s) = jsontimeconf.split(':')
+def power_setting_div(jsontimeconf, h,m,s):
     return html.Div(
         className="row power-settings-tab",
         children=[
@@ -142,7 +159,6 @@ def knobs(onconf, offconf):
                 label="OFF Config (s)",
                 labelPosition="bottom",
                 size=70,
-                scale={"labelInterval": 10},
                 color=theme["primary"],
                 max=10,
                 min=0.1,
@@ -177,7 +193,7 @@ def led_displays(onconf, offconf):
         className="led-displays",
     )
 
-def function_setting_div():
+def function_setting_div(onconf, offconf):
     data = JSONS().readconfjson()
     onconf = data['onconf']
     offconf = data['offconf']
@@ -201,21 +217,185 @@ def function_setting_div():
     )
 
 def tab1():
-    jsontimeconf = JSONS().readconfjson()['timeconf']
+    data = JSONS().readconfjson()
+    onconf = data['onconf']
+    offconf = data['offconf']
+    jsontimeconf = data['timeconf']
     (h, m, s) = jsontimeconf.split(':')
-    return html.Div([
-        power_setting_div(),
-        function_setting_div(),
-    ])
+    return html.Div(
+            className="row",
+            children=[
+                # LEFT PANEL - SETTINGS
+                html.Div(
+                    className="five columns",
+                    children=[
+                        html.Div(
+                            id="left-panel",
+                            children=[
+                                html.Div(
+                                    id="dark-theme-components",
+                                    className="left-panel-controls",
+                                    style={"height": 705},
+                                    children=DarkThemeProvider(
+                                        theme=theme,
+                                        children=[
+                                            power_setting_div(jsontimeconf, h,m,s),
+                                            function_setting_div(onconf, offconf),
+                                        ],
+                                    ),
+                                )
+                            ],
+                        )
+                    ],
+                ),
+                # RIGHT PANEL - OSCILLATIONS
+                html.Div(
+                    className="seven columns",
+                    children=[
+                        html.Div(
+                            id="right-panel",
+                            className="right-panel",
+                            children=[
+                                html.Div(
+                                    id="card-right-panel-info",
+                                    className="light-card",
+                                    children=[
+                                        html.Div(
+                                            [html.H3("Graph", id="graph-title")],
+                                            style={"color": theme["primary"]},
+                                            className="Title",
+                                        ),
+                                        dcc.Tabs(
+                                            id="tabs",
+                                            children=[
+                                                dcc.Tab(label="Run #1", value="1")
+                                            ],
+                                            value="1",
+                                            className="oscillator-tabs",
+                                        ),
+                                        html.Div(
+                                            className="row oscope-info",
+                                            children=[
+                                                html.Div(
+                                                    id="div-graph-info",
+                                                    className="graph-param",
+                                                    children=html.Div(
+                                                        id="graph-info", children="-"
+                                                    ),
+                                                ),
+                                                html.Button(
+                                                    "+",
+                                                    id="new-tab",
+                                                    n_clicks=0,
+                                                    type="submit",
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                ),
+                                html.Div(
+                                    id="card-graph",
+                                    className="light-card",
+                                    children=html.Div(id="time_series_chart_col_now"),
+                                ),
+                            ],
+                        )
+                    ],
+                ),
+            ],
+        ),
+   
+
+def tab2():
+    types = get_sensor_types()
+    return html.Div(
+            className="row",
+            children=[
+                html.Div(
+                    className="twelve columns",
+                    children=[
+                        html.Div(
+                            id="right-panel",
+                            className="right-panel",
+                            children=[
+                                html.Div(
+                                    id="card-right-panel-info",
+                                    className="light-card",
+                                    children=[
+                                        html.Div(
+                                            [html.H3("Graph", id="graph-title")],
+                                            style={"color": theme["primary"]},
+                                            className="Title",
+                                        ),
+                                        dcc.Tabs(
+                                            id="tabs",
+                                            children=[
+                                                dcc.Tab(label="Run #1", value="1")
+                                            ],
+                                            value="1",
+                                            className="oscillator-tabs",
+                                        ),
+                                        html.Div(
+                                            className="row oscope-info",
+                                            children=[
+                                                html.Div(
+                                                    id="div-graph-info",
+                                                    className="graph-param",
+                                                    children=html.Div(
+                                                        id="graph-info", children="-"
+                                                    ),
+                                                ),
+                                                html.Button(
+                                                    "+",
+                                                    id="new-tab",
+                                                    n_clicks=0,
+                                                    type="submit",
+                                                ),
+                                            ],
+                                        ),
+                                    ],
+                                ),
+
+                                dcc.Dropdown(
+                                        id='demo-dropdown',
+                                        options=types,
+                                        value=types[0]["label"]
+                                    ),
+                                html.Div(
+                                    id="card-graph",
+                                    className="light-card",
+                                    children=html.Div(id="time_series_chart_col"),
+                                ),
+                            ],
+                        )
+                    ],
+                ),
+            ],
+        ),
+
+
 
 def layout():
-    return html.Div([
-            dcc.Tabs(id='main-page-tabs', value='tab-1', children=[
-                dcc.Tab(label='Dashboard', value='tab-1'),
-                dcc.Tab(label='History', value='tab-2'),
-            ]),
-            html.Div(id='main-page-content')
-        ])
+    return html.Div(
+        id="main-page",
+        children=[
+            get_navbar(),
+            html.Div(
+                [
+                dcc.Tabs(id='main-page-tabs', value='tab-1',children=[
+                    dcc.Tab(label='Dashboard', value='tab-1'),
+                    dcc.Tab(label='History', value='tab-2'),
+                ], colors={
+                    "border": "white",
+                    "primary": "gold",
+                    "background": "cornsilk"
+                }
+            ),
+                html.Div(id='main-page-content')
+            ]
+        )
+    ],
+)
 
 
 def get_layout():
@@ -224,7 +404,6 @@ def get_layout():
     # A Bootstrap 4 container holds the rest of the layout
     return html.Div(
         [
-            get_navbar(),
             # Just the navigation bar at the top for now...
             # Stay tuned for part 3!
             layout(),

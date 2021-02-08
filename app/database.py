@@ -1,5 +1,6 @@
 import os
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 class Database:
     def __init__(self):
@@ -9,7 +10,7 @@ class Database:
             user=os.getenv("POSTGRES_USER"), 
             password=os.getenv("POSTGRES_PASSWORD"), 
             connect_timeout=5)
-        self._cursor = self._conn.cursor()
+        self._cursor = self._conn.cursor(cursor_factory=RealDictCursor)
 
     def __enter__(self):
         return self

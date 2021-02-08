@@ -79,7 +79,7 @@ class Sensors:
         self.temperature8 = temperature8
         with Database() as db:
             query = """ INSERT INTO sensor_data(test_id, time, timeconf, onconf, offconf, speed, sensor_id, temperature) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"""
-            valuses = (self.testID, self.nowstamp, self.timeconf, self.onconf, self.offconf, self.speed, 1, 1)
+            valuses = (self.testID, self.nowstamp, self.timeconf, self.onconf, self.offconf, self.speed, 1, self.temperature1)
             db.execute(query, valuses)
             db.close
             updateSensorInfo(self.testID, self.timeconf, self.onconf, self.offconf, self.speed, self.temperature1, self.temperature2, self.temperature3, self.temperature4, self.temperature5, self.temperature6, self.temperature7, self.temperature8)

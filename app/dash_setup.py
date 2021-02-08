@@ -33,7 +33,7 @@ def register_dashapps(app):
         __name__,
         # This is where the Flask app gets appointed as the server for the Dash app
         server = app,
-        url_base_pathname = '/dash/',
+        url_base_pathname = '/',
         # Separate assets folder in "static_dash" (optional)
         assets_folder = get_root_path(__name__) + '/static_dash/', 
         meta_tags = meta_viewport, 

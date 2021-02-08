@@ -12,7 +12,7 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     # logging.basicConfig(level=logging.DEBUG)
 
-    @app.route('/')
+    @app.route('/index/')
     def home():
         return render_template('index.html')
 
