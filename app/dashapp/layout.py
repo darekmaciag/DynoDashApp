@@ -87,11 +87,11 @@ def power_setting_div(jsontimeconf, h,m,s):
                             label="ON",
                         ),
                         html.Button('start', id='start'),
-                        dcc.Interval(id='interval', interval=500),
                         html.Button('stop', id='stop'),
                         html.Div(id='lock'),
                         html.Div(id='output'),
                         html.Div(id='placeholder'),
+                        html.P(id='err', style={'color': 'red'}),
                         ],
                         className="six columns",
                     ),
@@ -131,6 +131,7 @@ def power_setting_div(jsontimeconf, h,m,s):
                         ],
                         className="six columns",
                     ),
+                dcc.Interval(id='interval', interval=500),
                 ],
             ),
         ],
@@ -265,29 +266,24 @@ def tab1():
                                             style={"color": theme["primary"]},
                                             className="Title",
                                         ),
-                                        dcc.Tabs(
-                                            id="tabs",
-                                            children=[
-                                                dcc.Tab(label="Run #1", value="1")
-                                            ],
-                                            value="1",
-                                            className="oscillator-tabs",
-                                        ),
                                         html.Div(
                                             className="row oscope-info",
                                             children=[
                                                 html.Div(
                                                     id="div-graph-info",
                                                     className="graph-param",
-                                                    children=html.Div(
-                                                        id="graph-info", children="-"
+                                                    children=[
+                                                        html.Div("Started: ",
+                                                        id="test-started",
                                                     ),
-                                                ),
-                                                html.Button(
-                                                    "+",
-                                                    id="new-tab",
-                                                    n_clicks=0,
-                                                    type="submit",
+                                                        html.Div(
+                                                        id="test-status",
+                                                    ),
+                                                        html.Div(
+                                                        id="test-finished",
+                                                    ),
+                                                    
+                                                    ],
                                                 ),
                                             ],
                                         ),
@@ -327,40 +323,14 @@ def tab2():
                                             style={"color": theme["primary"]},
                                             className="Title",
                                         ),
-                                        dcc.Tabs(
-                                            id="tabs",
-                                            children=[
-                                                dcc.Tab(label="Run #1", value="1")
-                                            ],
-                                            value="1",
-                                            className="oscillator-tabs",
-                                        ),
-                                        html.Div(
-                                            className="row oscope-info",
-                                            children=[
-                                                html.Div(
-                                                    id="div-graph-info",
-                                                    className="graph-param",
-                                                    children=html.Div(
-                                                        id="graph-info", children="-"
-                                                    ),
-                                                ),
-                                                html.Button(
-                                                    "+",
-                                                    id="new-tab",
-                                                    n_clicks=0,
-                                                    type="submit",
-                                                ),
-                                            ],
-                                        ),
+                                        dcc.Dropdown(
+                                                id='demo-dropdown',
+                                                options=types,
+                                                value=types[0]["label"]
+                                            ),
                                     ],
                                 ),
 
-                                dcc.Dropdown(
-                                        id='demo-dropdown',
-                                        options=types,
-                                        value=types[0]["label"]
-                                    ),
                                 html.Div(
                                     id="card-graph",
                                     className="light-card",

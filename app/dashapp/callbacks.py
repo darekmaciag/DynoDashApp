@@ -29,7 +29,7 @@ theme = {
 ########### Motor loger###########
 def run_motor():
     if semaphore.is_locked():
-        raise Exception('Resource is locked')
+        raise Exception("aaa")
     semaphore.lock()
     Tests().create_test()
     JSONS().writestatus("on", True)
@@ -39,8 +39,8 @@ def run_motor():
     semaphore.unlock()
     return datetime.datetime.now()
 
-############# History chart #####################
 
+############# History chart #####################
 def get_sensor_time_series_data(test_id):
     sql = f"""
         SELECT 
@@ -106,8 +106,28 @@ def get_graph(trace, title):
             )
         )
     )
-##############################################################
 
+##############################################################
+def get_now_graph(trace, title):
+    return dcc.Graph(
+        # Disable the ModeBar with the Plotly logo and other buttons
+        config=dict(
+            displayModeBar=False
+        ),
+        figure=go.Figure(
+            data=[trace],
+            layout=go.Layout(
+                title=title,
+                plot_bgcolor="white",
+                xaxis=dict(
+                    autorange=True,
+                    # Time-filtering buttons above chart
+                    type = "date",
+                    # Alternative time filter slider
+                )
+            )
+        )
+    )
 
 def now_data():
     lasttest = JSONS().readtestjson()["testID"]
@@ -135,8 +155,7 @@ def now_data():
     # print("columns",columns)
     return df
 
-
-
+###########################################################################
 def register_callbacks(dash_app):
     """Register the callback functions for the Dash app, within the Flask app"""        
 
@@ -147,6 +166,27 @@ def register_callbacks(dash_app):
     def display_status(n_intervals):
         return True if semaphore.is_locked() else False
 
+    @dash_app.callback([
+        Output('test-started', 'children'),
+        Output('test-status', 'children'),
+        Output('test-finished', 'children'),
+        ],
+        Input('interval', 'n_intervals'))
+    def display_status(n_intervals):
+        data = JSONS().readtestjson()
+        started_value = str(data['started'])
+        finished_value = str(data['finished'])
+        status_value = str(data['status'])
+        return started_value, finished_value, status_value
+
+    @dash_app.callback(
+        Output('output', 'children'),
+        Input('start', 'n_clicks'))
+    def run_process(n_clicks):
+        if not n_clicks:
+            raise PreventUpdate
+        return run_motor()
+
     @dash_app.callback(
         Output('placeholder', 'children'),
         Input('stop', 'n_clicks'))
@@ -155,6 +195,7 @@ def register_callbacks(dash_app):
             raise PreventUpdate
         JSONS().writestatus("on", False)
         return 'Stop', task1(False)
+
 
     @dash_app.callback(
         Output('timeconf-knob-output', 'value'),
@@ -168,13 +209,6 @@ def register_callbacks(dash_app):
         JSONS().writestatus("timeconf", str(inputtime))
         return str(inputtime)
 
-    @dash_app.callback(
-        Output('output', 'children'),
-        Input('start', 'n_clicks'))
-    def run_process(n_clicks):
-        if not n_clicks:
-            raise PreventUpdate
-        return 'Finished at {}'.format(run_motor())
 
     @dash_app.callback(
         Output('onconf-display', 'value'),
@@ -184,6 +218,7 @@ def register_callbacks(dash_app):
             raise PreventUpdate
         JSONS().writestatus("onconf", value)
         return value
+
 
     @dash_app.callback(
         Output('offconf-display', 'value'),
@@ -200,6 +235,7 @@ def register_callbacks(dash_app):
         [Input('demo-dropdown', 'value')])
     def update_output(value):
         return 'You have selected "{}"'.format(value)
+
 
     @dash_app.callback(
             Output("time_series_chart_col", "children"),
@@ -244,7 +280,7 @@ def register_callbacks(dash_app):
         df = now_data()
         x = df["time"]
         y1 = df["temperature"]
-        y2 = df["cpu"]
+        # y2 = df["cpu"]
         title = f"Now"
 
         trace1 = go.Scatter(
@@ -252,23 +288,22 @@ def register_callbacks(dash_app):
             y=y1,
             name="Temp"
         )
-        trace2 = go.Scatter(
-            x=x,
-            y=y2,
-            name="CPU"
-        )
+        # trace2 = go.Scatter(
+        #     x=x,
+        #     y=y2,
+        #     name="CPU"
+        # )
 
         # Create two graphs using the traces above
-        graph1 = get_graph(trace1, title)
-        graph2 = get_graph(trace2, title)
+        graph1 = get_now_graph(trace1, title)
+        # graph2 = get_now_graph(trace2, title)
 
         return html.Div(
             [
                 dbc.Row(dbc.Col(graph1)),
-                dbc.Row(dbc.Col(graph2)),
+                # dbc.Row(dbc.Col(graph2)),
             ]
         )
-
 
 
 ############## main page ############################
@@ -300,7 +335,6 @@ def register_callbacks(dash_app):
                 function_setting_div(onconf, offconf),
             ],
         )
-
 
     # Callback updating backgrounds
     @dash_app.callback(

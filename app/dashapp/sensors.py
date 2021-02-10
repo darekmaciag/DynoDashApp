@@ -151,8 +151,8 @@ def updateTestInfo(id, status, started, finished):
     ## Working with buffered content
     data['testID'] = id
     data["status"] = status
-    data["started"] = str(started)
-    data["finished"] = str(finished)
+    data["started"] = str(started)[:19]
+    data["finished"] = str(finished)[:19]
 
     ## Save our changes to JSON file
     jsonFile = open("testdata.json", "w+")
