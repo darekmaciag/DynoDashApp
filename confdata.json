@@ -1,7 +1,6 @@
 {
     "on": false,
-    "testID": 107,
     "timeconf": "0:00:10",
-    "onconf": 0.87,
-    "offconf": 0.54
+    "onconf": 1.31,
+    "offconf": 0.65
 }

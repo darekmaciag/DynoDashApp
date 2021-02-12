@@ -1,4 +1,7 @@
 import os
+from dash_bootstrap_components._components.Col import Col
+from dash_bootstrap_components._components.Row import Row
+from dash_html_components.Div import Div
 from flask import url_for
 import dash_html_components as html
 import dash_core_components as dcc
@@ -17,7 +20,9 @@ theme = {
     "primary": "#447EFF",
     "secondary": "#D3D3D3",
     "detail": "#D3D3D3",
-}
+    }
+    
+PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
 
 def get_sensor_types():
@@ -35,347 +40,395 @@ def get_sensor_types():
         db.close 
         return types
 
-
-
 def get_navbar():
-    return html.Div(
-            id="header",
-            className="banner row",
-            children=[
-                # Logo and Title
-                html.Div(
-                    className="banner-logo-and-title",
-                    children=[
-                        html.Img(
-                            # src=app.get_asset_url("dash-logo-white.png"),
-                            className="logo",
-                        ),
-                        html.H2(
-                            "Pomiar częstości łączeń silnika"
-                        ),
+    return dbc.Navbar(
+    dbc.Container(
+        [
+            html.A(
+                # Use row and col to control vertical alignment of logo / brand
+                dbc.Row(
+                    [
+                        dbc.Col(html.Img(src=PLOTLY_LOGO, height="30px")),
+                        dbc.Col(dbc.NavbarBrand("Logo", className="ml-2")),
                     ],
+                    align="center",
+                    no_gutters=True,
                 ),
-                html.Div(
-                    className="row toggleDiv",
-                    children=daq.ToggleSwitch(
-                        id="toggleTheme", size=40, value=False, color="#00418e"
-                    ),
+                href="https://plot.ly",
+            ),
+            dbc.NavbarToggler(id="navbar-toggler2"),
+            dbc.Collapse(
+                dbc.Nav(
+                    [dbc.NavItem(dbc.NavLink("Home", href="/")),
+                    dbc.NavItem(dbc.NavLink("History", href="/history"))],
+                    className="ml-auto", navbar=True
                 ),
-            ],
-        )
+                id="navbar-collapse2",
+                navbar=True,
+            ),
+        ]
+    ),
+    color="dark",
+    dark=True,
+    className="mb-5",
+)
 
-
-def power_setting_div(jsontimeconf, h,m,s):
+def test_info():
     return html.Div(
-        className="row power-settings-tab",
+        children=[
+
+            html.Table([
+                html.Tr([
+                    html.Th("Started:"),
+                    html.Th("Finished:"),
+                    html.Th("Terminated:"),
+                ]),
+                html.Tr([
+                    html.Td(id="test-started"),
+                    html.Td(id="test-finished"),
+                    html.Td(id="test-status"),
+                ]),
+            ]),
+        ],
+    )
+
+
+###################################################                
+def niepotrzebne():
+    return html.Div([
+                html.Div(id='output'),
+                html.Div(id='placeholder'),
+    ])
+###################################################                
+
+
+
+
+def onoff_setting_div(testno):
+    return dbc.Row(
+        className="onoff-settings-tab",
         children=[
             # Title
-            html.Div(
+            dbc.Col(
                 className="Title",
-                children=html.H3(
+                children=[html.H3(
                     "Power", id="power-title", style={"color": theme["primary"]}
                 ),
-            ),
             # Power Controllers
-            html.Div(
-                className="power-controllers",
-                children=[
-                    html.Div(
-                        [
-                        daq.Indicator(
-                            id='my-indicator',
-                            label="ON",
-                        ),
-                        html.Button('start', id='start'),
-                        html.Button('stop', id='stop'),
-                        html.Div(id='lock'),
-                        html.Div(id='output'),
-                        html.Div(id='placeholder'),
-                        html.P(id='err', style={'color': 'red'}),
-                        ],
-                        className="six columns",
+            dbc.Row(children=
+                [
+                    dbc.Col(
+                        dbc.Row([
+                            dbc.Col(
+                                daq.LEDDisplay(
+                                    id='testno',
+                                    value=testno,
+                                    size=10,
+                                    label="Test No",
+                                    labelPosition="top",
+                                    color=theme["primary"],
+                                    ),
+                            )
+                        ])
                     ),
-                    html.Div(
-                        [
-                            daq.NumericInput(
-                                id="hours-input",
-                                value=h,
-                                min=0,
-                                max=24,
-                                className="four columns",
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col(
+                                daq.Indicator(
+                                    id='my-indicator',
+                                    label="Running",
+                                    )
                             ),
-                            daq.NumericInput(
-                                id="minutes-input",
-                                value=m,
-                                min=0,
-                                max=59,
-                                className="four columns",
+                        ]),
+                        dbc.Row([
+                            dbc.Col(
+                                daq.StopButton(
+                                    buttonText='start',
+                                    id='start',
+                                    )
                             ),
-                            daq.NumericInput(
-                                id="seconds-input",
-                                value=s,
-                                min=0,
-                                max=59,
-                                className="four columns",
+                        ]),
+                    ]),
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col(
+                                daq.Indicator(
+                                    id='stoped',
+                                    label="Stoped",
+                                    )
                             ),
-                            # html.Div(id='timeconf-knob-output'),
-                            daq.LEDDisplay(
-                                id='timeconf-knob-output',
-                                value=jsontimeconf,
-                                size=20,
-                                label="Test duration",
-                                labelPosition="top",
-                                color=theme["primary"],
-                                className="four columns"
-                            ) 
-                        ],
-                        className="six columns",
-                    ),
-                dcc.Interval(id='interval', interval=500),
+                        ]),
+                        dbc.Row([
+                            dbc.Col(
+                                daq.StopButton(
+                                    buttonText='stop',
+                                    id='stop',
+                                    )
+                            ),
+                        ]),
+                    ]),
                 ],
             ),
+        ]),
         ],
     )
 
 
-
-def knobs(onconf, offconf):
-    return html.Div(
-        [
-            daq.Knob(
-                value=onconf,
-                id="onconf-input",
-                label="ON Config (s)",
-                labelPosition="bottom",
-                size=70,
-                color=theme["primary"],
-                max=10,
-                min=0.1,
-                style={"backgroundColor": "transparent"},
-                className="four columns",
-            ),
-            daq.Knob(
-                value=offconf,
-                id="offconf-input",
-                label="OFF Config (s)",
-                labelPosition="bottom",
-                size=70,
-                color=theme["primary"],
-                max=10,
-                min=0.1,
-                className="four columns",
-            ),
-        ],
-        className="knobs",
-    )
-
-def led_displays(onconf, offconf):
-    return html.Div(
-        [
-            daq.LEDDisplay(
-                id="onconf-display",
-                size=10,
-                value=onconf,
-                label="ON Config (s)",
-                labelPosition="bottom",
-                color=theme["primary"],
-                className="four columns",
-            ),
-            daq.LEDDisplay(
-                id="offconf-display",
-                size=10,
-                value=offconf,
-                label="OFF Config (s)",
-                labelPosition="bottom",
-                color=theme["primary"],
-                className="four columns",
-            ),
-        ],
-        className="led-displays",
-    )
-
-def function_setting_div(onconf, offconf):
-    data = JSONS().readconfjson()
-    onconf = data['onconf']
-    offconf = data['offconf']
-    return html.Div(
-        className="row power-settings-tab",
+def time_setting_div(timenow, h,m,s):
+    return dbc.Row(
+        className="time-settings-tab",
         children=[
-            html.Div(
+            # Title
+            dbc.Col(
                 className="Title",
-                style={"color": theme["primary"]},
-                children=html.H3("Function", id="function-title"),
-            ),
-            html.Div(
+                children=[html.H3(
+                    "Time", id="time-title", style={"color": theme["primary"]}
+                ),
+            # Power Controllers
+            dbc.Row(
                 children=[
-                    # Knobs
-                    knobs(onconf, offconf),
-                    # LED Displays
-                    led_displays(onconf, offconf),
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                daq.LEDDisplay(
+                                    id='timeconf-knob-output',
+                                    value=timenow,
+                                    size=15,
+                                    label="Test duration",
+                                    labelPosition="top",
+                                    color=theme["primary"],
+                                    className="led-displays"
+                                    ),
+                            ])
+                        ]),
+                        dbc.Row([
+                            dbc.Col([
+                                daq.NumericInput(
+                                    id="hours-input",
+                                    value=h,
+                                    min=0,
+                                    max=24,
+                                    className="time-inputs",
+                                    ),
+                            ]),
+                            dbc.Col([
+                                daq.NumericInput(
+                                    id="minutes-input",
+                                    value=m,
+                                    min=0,
+                                    max=59,
+                                    className="time-inputs",
+                                    ),
+
+                            ]),
+                            dbc.Col([
+                                daq.NumericInput(
+                                    id="seconds-input",
+                                    value=s,
+                                    min=0,
+                                    max=59,
+                                    className="time-inputs",
+                                    ),
+                            ]),
+                        ]),
+                    ]),
+                    dbc.Col(
+                        dbc.Row([
+                            dbc.Col([
+                                daq.LEDDisplay(
+                                    id='testtime-now',
+                                    value="0:00:00",
+                                    size=15,
+                                    label="Test now",
+                                    labelPosition="top",
+                                    color=theme["primary"],
+                                    className="four columns"
+                                    ),
+                            ]),
+                        ])
+                    ),
+                ],
+            ),
+        ]),
+        ],
+    )
+
+
+
+def connections_setting_div(onconf, offconf):
+    return dbc.Row(
+        className="row connections-settings-tab",
+        children=[
+            dbc.Col(
+                className="Title",
+                children=[html.H3(
+                    "Function", id="function-title", style={"color": theme["primary"]}
+                    ),
+            dbc.Row(className="confiigtime-buttons",
+                children=[
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                daq.Knob(
+                                    value=onconf,
+                                    id="onconf-input",
+                                    label="ON Config (s)",
+                                    labelPosition="bottom",
+                                    size=50,
+                                    color=theme["primary"],
+                                    max=10,
+                                    min=0.1,
+                                    style={"backgroundColor": "transparent"},
+                                    className="five columns",
+                                ),
+                            ]),
+                        ]),
+                        dbc.Row([
+                            dbc.Col([
+                                daq.LEDDisplay(
+                                    id="onconf-display",
+                                    size=10,
+                                    value=onconf,
+                                    label="ON Config (s)",
+                                    labelPosition="bottom",
+                                    color=theme["primary"],
+                                    className="five columns",
+                                ),
+                            ]),
+                        ]),
+                    ]),
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                daq.Knob(
+                                    value=offconf,
+                                    id="offconf-input",
+                                    label="OFF Config (s)",
+                                    labelPosition="bottom",
+                                    size=50,
+                                    color=theme["primary"],
+                                    max=10,
+                                    min=0.1,
+                                    className="five columns",
+                                ),
+                            ]),
+                        ]),
+                        dbc.Row([
+                            dbc.Col([
+                                daq.LEDDisplay(
+                                    id="offconf-display",
+                                    size=10,
+                                    value=offconf,
+                                    label="OFF Config (s)",
+                                    labelPosition="bottom",
+                                    color=theme["primary"],
+                                    className="five columns",
+                                ),
+                            ]),
+                        ]),
+                    ]),
                 ]
             ),
+        ]),
         ],
     )
 
-def tab1():
+def home():
     data = JSONS().readconfjson()
     onconf = data['onconf']
     offconf = data['offconf']
-    jsontimeconf = data['timeconf']
-    (h, m, s) = jsontimeconf.split(':')
-    return html.Div(
+    timenow = data['timeconf']
+    testno = JSONS().readtestjson()['testID']
+    (h, m, s) = timenow.split(':')
+    return dbc.Row(
             className="row",
             children=[
-                # LEFT PANEL - SETTINGS
-                html.Div(
-                    className="five columns",
+                # LEFT PANEL - TEST SETTINGS
+                dbc.Col(
+                    width=4,
                     children=[
-                        html.Div(
-                            id="left-panel",
-                            children=[
-                                html.Div(
-                                    id="dark-theme-components",
-                                    className="left-panel-controls",
-                                    style={"height": 705},
-                                    children=DarkThemeProvider(
-                                        theme=theme,
-                                        children=[
-                                            power_setting_div(jsontimeconf, h,m,s),
-                                            function_setting_div(onconf, offconf),
-                                        ],
-                                    ),
-                                )
-                            ],
-                        )
+                        onoff_setting_div(testno),
+                        time_setting_div(timenow, h,m,s),
+                        connections_setting_div(onconf, offconf),
+                        niepotrzebne(),
                     ],
                 ),
-                # RIGHT PANEL - OSCILLATIONS
-                html.Div(
-                    className="seven columns",
+                # RIGHT PANEL - TEST INFO
+                dbc.Col(
+                    width=8,
                     children=[
-                        html.Div(
-                            id="right-panel",
+                        dbc.Row(
                             className="right-panel",
                             children=[
-                                html.Div(
-                                    id="card-right-panel-info",
-                                    className="light-card",
-                                    children=[
-                                        html.Div(
-                                            [html.H3("Graph", id="graph-title")],
-                                            style={"color": theme["primary"]},
-                                            className="Title",
+                                    dbc.Col(
+                                        className="Title",
+                                        children=html.H3(
+                                            "Graph", id="graph-title", style={"color": theme["primary"]}
                                         ),
-                                        html.Div(
-                                            className="row oscope-info",
-                                            children=[
-                                                html.Div(
-                                                    id="div-graph-info",
-                                                    className="graph-param",
-                                                    children=[
-                                                        html.Div("Started: ",
-                                                        id="test-started",
-                                                    ),
-                                                        html.Div(
-                                                        id="test-status",
-                                                    ),
-                                                        html.Div(
-                                                        id="test-finished",
-                                                    ),
-                                                    
-                                                    ],
-                                                ),
-                                            ],
-                                        ),
-                                    ],
-                                ),
-                                html.Div(
-                                    id="card-graph",
-                                    className="light-card",
-                                    children=html.Div(id="time_series_chart_col_now"),
-                                ),
+                                    ),
+                                ],
+                        ),
+
+                        dbc.Row(
+                            className="right-panel-graph",
+                            children=[
+                                dbc.Col([test_info()]),
                             ],
+                        ),
+                        dbc.Row(
+                                dbc.Col(id="time_series_chart_col_now"),
                         )
                     ],
                 ),
+            dcc.Interval(id='interval', interval=500),
             ],
         ),
    
-
-def tab2():
+   
+def history():
     types = get_sensor_types()
-    return html.Div(
-            className="row",
+    return dbc.Col(
+            width=12,
             children=[
-                html.Div(
-                    className="twelve columns",
+                dbc.Row(
+                    className="right-panel",
                     children=[
-                        html.Div(
-                            id="right-panel",
-                            className="right-panel",
-                            children=[
-                                html.Div(
-                                    id="card-right-panel-info",
-                                    className="light-card",
-                                    children=[
-                                        html.Div(
-                                            [html.H3("Graph", id="graph-title")],
-                                            style={"color": theme["primary"]},
-                                            className="Title",
-                                        ),
-                                        dcc.Dropdown(
-                                                id='demo-dropdown',
-                                                options=types,
-                                                value=types[0]["label"]
-                                            ),
-                                    ],
+                            dbc.Col(
+                                className="Title",
+                                children=html.H3(
+                                    "Graph", id="graph-title", style={"color": theme["primary"]}
                                 ),
+                            ),
+                        ],
+                ),
 
-                                html.Div(
-                                    id="card-graph",
-                                    className="light-card",
-                                    children=html.Div(id="time_series_chart_col"),
-                                ),
-                            ],
-                        )
+                dbc.Row(
+                    className="right-panel-graph",
+                    children=[
+                        dbc.Col([
+                            dcc.Dropdown(
+                                id='demo-dropdown',
+                                options=types,
+                                value=types[0]["label"]
+                            ),
+
+                        ]),
                     ],
                 ),
+                dbc.Row([
+                        html.Div(id="time_series_chart_col"),
+                ]
+                )
             ],
         ),
-
-
-
-def layout():
-    return html.Div(
-        id="main-page",
-        children=[
-            get_navbar(),
-            html.Div(
-                [
-                dcc.Tabs(id='main-page-tabs', value='tab-1',children=[
-                    dcc.Tab(label='Dashboard', value='tab-1'),
-                    dcc.Tab(label='History', value='tab-2'),
-                ], colors={
-                    "border": "white",
-                    "primary": "gold",
-                    "background": "cornsilk"
-                }
-            ),
-                html.Div(id='main-page-content')
-            ]
-        )
-    ],
-)
 
 
 def get_layout():
     """Function to get Dash's "HTML" layout"""
 
     # A Bootstrap 4 container holds the rest of the layout
-    return html.Div(
-        [
-            # Just the navigation bar at the top for now...
-            # Stay tuned for part 3!
-            layout(),
-        ], 
-    )
+    return html.Div([
+    dcc.Location(id='url', refresh=False),
+    get_navbar(),
+    html.Div(id='page-content')
+])

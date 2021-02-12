@@ -1,9 +1,9 @@
 {
     "on": true,
-    "testID": 306,
-    "timeconf": "2021-02-10 01:00:13.858174",
-    "onconf": 0.87,
-    "offconf": 0.54,
+    "testID": 338,
+    "timeconf": "2021-02-12 04:26:05.377111",
+    "onconf": 1.31,
+    "offconf": 0.65,
     "speed": 5,
     "temperature1": 10,
     "temperature2": 1,

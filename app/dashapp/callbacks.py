@@ -1,4 +1,4 @@
-from app.dashapp.layout import tab1, tab2, power_setting_div, function_setting_div
+from app.dashapp.layout import home, history, onoff_setting_div, connections_setting_div
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -26,7 +26,7 @@ theme = {
     "detail": "#D3D3D3",
 }
 
-########### Motor loger###########
+##################### Motor loger ############################
 def run_motor():
     if semaphore.is_locked():
         raise Exception("aaa")
@@ -39,8 +39,7 @@ def run_motor():
     semaphore.unlock()
     return datetime.datetime.now()
 
-
-############# History chart #####################
+##################### History chart ###########################
 def get_sensor_time_series_data(test_id):
     sql = f"""
         SELECT 
@@ -107,7 +106,7 @@ def get_graph(trace, title):
         )
     )
 
-##############################################################
+###################### History now ############################
 def get_now_graph(trace, title):
     return dcc.Graph(
         # Disable the ModeBar with the Plotly logo and other buttons
@@ -155,34 +154,34 @@ def now_data():
     # print("columns",columns)
     return df
 
-###########################################################################
+############# REGISTER CALLBACKS ##############################
 def register_callbacks(dash_app):
-    """Register the callback functions for the Dash app, within the Flask app"""        
 
-##################### config ############################
+##################### test info ###############################
     @dash_app.callback(
         Output('my-indicator', 'value'),
         Input('interval', 'n_intervals'))
     def display_status(n_intervals):
         return True if semaphore.is_locked() else False
 
-    @dash_app.callback([
-        Output('test-started', 'children'),
-        Output('test-status', 'children'),
-        Output('test-finished', 'children'),
-        ],
+    @dash_app.callback(
+        Output('testtime-now', 'value'),
         Input('interval', 'n_intervals'))
-    def display_status(n_intervals):
-        data = JSONS().readtestjson()
-        started_value = str(data['started'])
-        finished_value = str(data['finished'])
-        status_value = str(data['status'])
-        return started_value, finished_value, status_value
-
+    def display_test_info(n_intervals):
+        timeconfig = JSONS().readtestjson()
+        nowtime = datetime.datetime.now() - datetime.datetime.strptime(timeconfig['started'], '%Y-%m-%d %H:%M:%S')
+        finished_time = datetime.datetime.strptime(timeconfig['finished'], '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(timeconfig['started'], '%Y-%m-%d %H:%M:%S')
+        now = str(nowtime)[:7]
+        fin = str(finished_time)[:7]
+        if semaphore.is_locked():
+            return now
+        else:
+            return fin
+        
     @dash_app.callback(
         Output('output', 'children'),
         Input('start', 'n_clicks'))
-    def run_process(n_clicks):
+    def run_loging_process(n_clicks):
         if not n_clicks:
             raise PreventUpdate
         return run_motor()
@@ -190,13 +189,13 @@ def register_callbacks(dash_app):
     @dash_app.callback(
         Output('placeholder', 'children'),
         Input('stop', 'n_clicks'))
-    def stop_process(n_clicks):
+    def stop_loging_process(n_clicks):
         if not n_clicks:
             raise PreventUpdate
         JSONS().writestatus("on", False)
         return 'Stop', task1(False)
 
-
+##################### config ################################
     @dash_app.callback(
         Output('timeconf-knob-output', 'value'),
         [Input('hours-input', 'value'),
@@ -209,7 +208,6 @@ def register_callbacks(dash_app):
         JSONS().writestatus("timeconf", str(inputtime))
         return str(inputtime)
 
-
     @dash_app.callback(
         Output('onconf-display', 'value'),
         [Input('onconf-input', 'value'),])
@@ -218,7 +216,6 @@ def register_callbacks(dash_app):
             raise PreventUpdate
         JSONS().writestatus("onconf", value)
         return value
-
 
     @dash_app.callback(
         Output('offconf-display', 'value'),
@@ -229,13 +226,25 @@ def register_callbacks(dash_app):
         JSONS().writestatus("offconf", value)
         return value
 
-################### chart #####################
+    @dash_app.callback([
+        Output('test-started', 'children'),
+        Output('test-finished', 'children'),
+        Output('test-status', 'children'),
+        ],
+        Input('interval', 'n_intervals'))
+    def display_testinfo(n_intervals):
+        data = JSONS().readtestjson()
+        started_value = str(data['started'])
+        finished_value = str(data['finished'])
+        status_value = str(data['status'])
+        return started_value, finished_value, status_value
+
+##################### chart #################################
     @dash_app.callback(
         Output('dd-output-container', 'children'),
         [Input('demo-dropdown', 'value')])
     def update_output(value):
         return 'You have selected "{}"'.format(value)
-
 
     @dash_app.callback(
             Output("time_series_chart_col", "children"),
@@ -270,8 +279,6 @@ def register_callbacks(dash_app):
             ]
         )
 
-######################################################
-
     @dash_app.callback(
             Output("time_series_chart_col_now", "children"),
             [Input("interval", "n_intervals")],
@@ -305,50 +312,50 @@ def register_callbacks(dash_app):
             ]
         )
 
-
-############## main page ############################
-    @dash_app.callback(Output('main-page-content', 'children'),
-                Input('main-page-tabs', 'value'))
-    def render_content(tab):
-        if tab == 'tab-1':
-            return tab1()
-        elif tab == 'tab-2':
-            return tab2()
-
-
-        # Callback updating backgrounds
-    @dash_app.callback(
-        Output("dark-theme-components", "children"),
-        [Input("toggleTheme", "value")],
-    )
-    def turn_dark(turn_dark,):
-        data = JSONS().readconfjson()
-        onconf = data['onconf']
-        offconf = data['offconf']
-        jsontimeconf = data['timeconf']
-        (h, m, s) = jsontimeconf.split(':')
-        theme.update(dark=turn_dark)
-        return DarkThemeProvider(
-            theme=theme,
-            children=[
-                power_setting_div(jsontimeconf, h,m,s),
-                function_setting_div(onconf, offconf),
-            ],
-        )
-
-    # Callback updating backgrounds
-    @dash_app.callback(
-        [
-            Output("main-page", "className"),
-            Output("left-panel", "className"),
-            Output("card-right-panel-info", "className"),
-            Output("card-graph", "className"),
-        ],
-        [Input("toggleTheme", "value")],
-    )
-    def update_background(turn_dark):
-
-        if turn_dark:
-            return ["dark-main-page", "dark-card", "dark-card", "dark-card"]
+##################### main page #############################
+    @dash_app.callback(dash.dependencies.Output('page-content', 'children'),
+                [dash.dependencies.Input('url', 'pathname')])
+    def display_page(pathname):
+        if pathname == '/history':
+            return history()
         else:
-            return ["light-main-page", "light-card", "light-card", "light-card"]
+            return home()
+
+            
+    #     # Callback updating backgrounds
+
+    # @dash_app.callback(
+    #     Output("dark-theme-components", "children"),
+    #     [Input("toggleTheme", "value")],
+    #     )
+    # def turn_dark(turn_dark,):
+    #     data = JSONS().readconfjson()
+    #     onconf = data['onconf']
+    #     offconf = data['offconf']
+    #     jsontimeconf = data['timeconf']
+    #     (h, m, s) = jsontimeconf.split(':')
+    #     theme.update(dark=turn_dark)
+    #     return DarkThemeProvider(
+    #         theme=theme,
+    #         children=[
+    #             onoff_setting_div(jsontimeconf, h,m,s),
+    #             connections_setting_div(onconf, offconf),
+    #         ],
+    #     )
+
+    # # Callback updating backgrounds
+    # @dash_app.callback(
+    #     [
+    #         Output("main-page", "className"),
+    #         Output("left-panel", "className"),
+    #         Output("card-right-panel-info", "className"),
+    #         Output("card-graph", "className"),
+    #     ],
+    #     [Input("toggleTheme", "value")],
+    #     )
+    # def update_background(turn_dark):
+
+    #     if turn_dark:
+    #         return ["dark-main-page", "dark-card", "dark-card", "dark-card"]
+    #     else:
+    #         return ["light-main-page", "light-card", "light-card", "light-card"]

@@ -41,8 +41,8 @@ def breakLoop():
 def gettimedelta():
     timeconfig = JSONS().readconfjson()['timeconf']
     (h, m, s) = timeconfig.split(':')
-    deftimedelda = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
-    return deftimedelda      
+    timedelda = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
+    return timedelda      
 
         
 
