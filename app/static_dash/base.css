@@ -1,0 +1,32 @@
+.container-fluid {
+    padding-right:0px;
+    padding-left:0px;
+    margin-right:auto;
+    margin-left:auto;
+    align-items: stretch;
+}
+
+.col {
+    padding-right:20px;
+    padding-left:20px;
+    margin-right:auto;
+    margin-left:auto
+}
+
+.card{
+    padding-bottom: 10px;
+    padding-top: 10px;
+    background-color: black;
+    background-image:  radial-gradient(#eeeeee 1.1500000000000001px, transparent 1.1500000000000001px), radial-gradient(#eeeeee 1.1500000000000001px, #ffffff 1.1500000000000001px);
+    background-size: 46px 46px;
+    background-position: 0 0,23px 23px;
+}
+
+.row{
+    padding: 5px;
+}
+
+body {
+    background-color: #ffffff;
+    background-image:  linear-gradient(#f1f1f1 1.8px, transparent 1.8px), linear-gradient(to right, #f1f1f1 1.8px, #ffffff 1.8px);
+    background-size: 36px 36px;}

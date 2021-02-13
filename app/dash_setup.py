@@ -2,6 +2,7 @@ import dash
 from flask.helpers import get_root_path
 import dash_auth
 import os
+import dash_bootstrap_components as dbc
 
 def register_dashapps(app):
     """
@@ -12,9 +13,7 @@ def register_dashapps(app):
     }
 
     # external CSS stylesheets
-    external_stylesheets = [
-        'https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/yeti/bootstrap.min.css'
-    ]
+    external_stylesheets = [dbc.themes.SKETCHY]
     
     # external JavaScript files
     external_scripts = [

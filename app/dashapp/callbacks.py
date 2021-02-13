@@ -9,7 +9,6 @@ import datetime
 from dash.exceptions import PreventUpdate
 from app.dashapp.motor import task1, task2
 import threading
-from dash_daq import DarkThemeProvider
 import pandas as pd
 import plotly.graph_objs as go
 import dash_bootstrap_components as dbc
@@ -18,13 +17,6 @@ semaphore = Semaphore()
 
 axis_color = {"dark": "#EBF0F8", "light": "#506784"}
 marker_color = {"dark": "#f2f5fa", "light": "#2a3f5f"}
-
-theme = {
-    "dark": False,
-    "primary": "#447EFF",
-    "secondary": "#D3D3D3",
-    "detail": "#D3D3D3",
-}
 
 ##################### Motor loger ############################
 def run_motor():
@@ -159,7 +151,7 @@ def register_callbacks(dash_app):
 
 ##################### test info ###############################
     @dash_app.callback(
-        Output('my-indicator', 'value'),
+        Output('running-indicator', 'value'),
         Input('interval', 'n_intervals'))
     def display_status(n_intervals):
         return True if semaphore.is_locked() else False
@@ -187,26 +179,23 @@ def register_callbacks(dash_app):
         return run_motor()
 
     @dash_app.callback(
-        Output('placeholder', 'children'),
+        Output('stoped', 'value'),
         Input('stop', 'n_clicks'))
     def stop_loging_process(n_clicks):
         if not n_clicks:
             raise PreventUpdate
         JSONS().writestatus("on", False)
-        return 'Stop', task1(False)
+        return True, task1(False)
 
 ##################### config ################################
     @dash_app.callback(
         Output('timeconf-knob-output', 'value'),
-        [Input('hours-input', 'value'),
-        Input('minutes-input', 'value'),
-        Input('seconds-input', 'value')])
-    def update_testtime(inhours, inminutes, inseconds):
-        inputtime = datetime.timedelta(hours=int(inhours), minutes=int(inminutes), seconds=int(inseconds))
-        if inhours is None and inminutes is None and inseconds is None:
+        [Input('time-input', 'value'),])
+    def update_testtime(value):
+        if value is None:
             raise PreventUpdate
-        JSONS().writestatus("timeconf", str(inputtime))
-        return str(inputtime)
+        JSONS().writestatus("timeconf", str(value))
+        return str(value)
 
     @dash_app.callback(
         Output('onconf-display', 'value'),
@@ -230,6 +219,8 @@ def register_callbacks(dash_app):
         Output('test-started', 'children'),
         Output('test-finished', 'children'),
         Output('test-status', 'children'),
+        Output('test-id', 'children'),
+        Output('testno', "value")
         ],
         Input('interval', 'n_intervals'))
     def display_testinfo(n_intervals):
@@ -237,7 +228,8 @@ def register_callbacks(dash_app):
         started_value = str(data['started'])
         finished_value = str(data['finished'])
         status_value = str(data['status'])
-        return started_value, finished_value, status_value
+        testno = str(data['testID'])
+        return started_value, finished_value, status_value, testno, testno
 
 ##################### chart #################################
     @dash_app.callback(
@@ -272,7 +264,7 @@ def register_callbacks(dash_app):
         graph1 = get_graph(trace1, title)
         graph2 = get_graph(trace2, title)
 
-        return html.Div(
+        return dbc.Col(
             [
                 dbc.Row(dbc.Col(graph1)),
                 dbc.Row(dbc.Col(graph2)),
@@ -320,42 +312,3 @@ def register_callbacks(dash_app):
             return history()
         else:
             return home()
-
-            
-    #     # Callback updating backgrounds
-
-    # @dash_app.callback(
-    #     Output("dark-theme-components", "children"),
-    #     [Input("toggleTheme", "value")],
-    #     )
-    # def turn_dark(turn_dark,):
-    #     data = JSONS().readconfjson()
-    #     onconf = data['onconf']
-    #     offconf = data['offconf']
-    #     jsontimeconf = data['timeconf']
-    #     (h, m, s) = jsontimeconf.split(':')
-    #     theme.update(dark=turn_dark)
-    #     return DarkThemeProvider(
-    #         theme=theme,
-    #         children=[
-    #             onoff_setting_div(jsontimeconf, h,m,s),
-    #             connections_setting_div(onconf, offconf),
-    #         ],
-    #     )
-
-    # # Callback updating backgrounds
-    # @dash_app.callback(
-    #     [
-    #         Output("main-page", "className"),
-    #         Output("left-panel", "className"),
-    #         Output("card-right-panel-info", "className"),
-    #         Output("card-graph", "className"),
-    #     ],
-    #     [Input("toggleTheme", "value")],
-    #     )
-    # def update_background(turn_dark):
-
-    #     if turn_dark:
-    #         return ["dark-main-page", "dark-card", "dark-card", "dark-card"]
-    #     else:
-    #         return ["light-main-page", "light-card", "light-card", "light-card"]

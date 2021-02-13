@@ -1,6 +1,9 @@
 import os
+from dash.development.base_component import _check_if_has_indexable_children
+from dash_bootstrap_components._components.Card import Card
 from dash_bootstrap_components._components.Col import Col
 from dash_bootstrap_components._components.Row import Row
+from dash_bootstrap_components._components.Spinner import Spinner
 from dash_html_components.Div import Div
 from flask import url_for
 import dash_html_components as html
@@ -10,327 +13,320 @@ import dash_bootstrap_components as dbc
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from app.dashapp.sensors import JSONS, Database
-from dash_daq import DarkThemeProvider
 
 axis_color = {"dark": "#EBF0F8", "light": "#506784"}
 marker_color = {"dark": "#f2f5fa", "light": "#2a3f5f"}
 
-theme = {
-    "dark": False,
-    "primary": "#447EFF",
-    "secondary": "#D3D3D3",
-    "detail": "#D3D3D3",
-    }
-    
+
 PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
 
-def get_sensor_types():
-    sql = """
-        --Get the labels and underlying values for the dropdown menu "children"
-        SELECT 
-            distinct 
-            id as label,
-            id as value
-        FROM tests
-        ORDER BY id DESC;
-    """
-    with Database() as db:
-        types = db.query(sql)
-        db.close 
-        return types
-
 def get_navbar():
     return dbc.Navbar(
-    dbc.Container(
-        [
-            html.A(
-                # Use row and col to control vertical alignment of logo / brand
-                dbc.Row(
-                    [
-                        dbc.Col(html.Img(src=PLOTLY_LOGO, height="30px")),
-                        dbc.Col(dbc.NavbarBrand("Logo", className="ml-2")),
-                    ],
-                    align="center",
-                    no_gutters=True,
+        dbc.Container(
+            fluid=True,
+            children=
+            [
+                html.A(
+                    dbc.Row(
+                        [
+                            dbc.Col(html.Img(src=PLOTLY_LOGO, height="30px")),
+                            dbc.Col(dbc.NavbarBrand("Badanie częstści łączeń silnika", className="ml-2")),
+                        ],
+                        align="center",
+                        no_gutters=False,
+                    ),
+                    href="/",
                 ),
-                href="https://plot.ly",
-            ),
-            dbc.NavbarToggler(id="navbar-toggler2"),
-            dbc.Collapse(
-                dbc.Nav(
-                    [dbc.NavItem(dbc.NavLink("Home", href="/")),
-                    dbc.NavItem(dbc.NavLink("History", href="/history"))],
-                    className="ml-auto", navbar=True
+                dbc.NavbarToggler(id="navbar-toggler2"),
+                dbc.Collapse(
+                    dbc.Nav(
+                        [dbc.NavItem(dbc.NavLink("Home", href="/")),
+                         dbc.NavItem(dbc.NavLink("History", href="/history"))],
+                        className="ml-auto", navbar=True
+                    ),
+                    id="navbar-collapse2",
+                    navbar=True,
                 ),
-                id="navbar-collapse2",
-                navbar=True,
-            ),
-        ]
-    ),
-    color="dark",
-    dark=True,
-    className="mb-5",
-)
-
-def test_info():
-    return html.Div(
-        children=[
-
-            html.Table([
-                html.Tr([
-                    html.Th("Started:"),
-                    html.Th("Finished:"),
-                    html.Th("Terminated:"),
-                ]),
-                html.Tr([
-                    html.Td(id="test-started"),
-                    html.Td(id="test-finished"),
-                    html.Td(id="test-status"),
-                ]),
-            ]),
-        ],
+            ]
+        ),
+        color="dark",
+        dark=True,
+        className="mb-5",
     )
 
+###################### HOME ############################
+def test_info():
+    return dbc.Row([
+            dbc.Col([
+                dbc.Row(
+                    dbc.Col(
+                        html.H5("Test ID"),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Div(id="test-id"),
+                    )
+                )
+            ]),
+            dbc.Col([
+                dbc.Row(
+                    dbc.Col(
+                        html.H5("Started"),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Div(id="test-started"),
+                    )
+                )
+            ]),
+            dbc.Col([
+                dbc.Row(
+                    dbc.Col(
+                        html.H5("Finished"),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Div(id="test-finished"),
+                    )
+                )
+            ]),
+            dbc.Col([
+                dbc.Row(
+                    dbc.Col(
+                        html.H5("Terminated"),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Div(id="test-status"),
+                    )
+                )
+            ]),
+        ])
 
-###################################################                
-def niepotrzebne():
-    return html.Div([
-                html.Div(id='output'),
-                html.Div(id='placeholder'),
-    ])
-###################################################                
-
-
-
-
-def onoff_setting_div(testno):
-    return dbc.Row(
+def onoff_setting_div():
+    return dbc.Card(
         className="onoff-settings-tab",
         children=[
-            # Title
             dbc.Col(
                 className="Title",
-                children=[html.H3(
-                    "Power", id="power-title", style={"color": theme["primary"]}
-                ),
-            # Power Controllers
-            dbc.Row(children=
-                [
-                    dbc.Col(
-                        dbc.Row([
-                            dbc.Col(
-                                daq.LEDDisplay(
-                                    id='testno',
-                                    value=testno,
-                                    size=10,
-                                    label="Test No",
-                                    labelPosition="top",
-                                    color=theme["primary"],
-                                    ),
-                            )
-                        ])
+                children=[
+                    html.H3(
+                        "Power", id="power-title"
                     ),
-                    dbc.Col([
-                        dbc.Row([
+                    dbc.Row(
+                        className="onoff-buttons",
+                        children=[
                             dbc.Col(
-                                daq.Indicator(
-                                    id='my-indicator',
-                                    label="Running",
+                                lg=4,
+                                xs=12,
+                                children=[
+                                    dbc.Row(
+                                        dbc.Col(
+                                            daq.LEDDisplay(
+                                                id='testno',
+                                                size=20,
+                                                label="Test No",
+                                                labelPosition="top",
+                                            )
+                                        )
                                     )
-                            ),
-                        ]),
-                        dbc.Row([
+                                ]),
                             dbc.Col(
-                                daq.StopButton(
-                                    buttonText='start',
-                                    id='start',
+                                lg=4,
+                                xs=6,
+                                children=[
+                                    dbc.Row(
+                                        dbc.Col(
+                                            daq.Indicator(
+                                                id='running-indicator',
+                                                label="Running",
+                                                color="#FFB5B5"
+                                            )
+                                        )
+                                    ),
+                                    dbc.Row(
+                                        dbc.Col(
+                                            dbc.Button('START',
+                                                       id='start',
+                                                       color="warning",
+                                                       size="sm",
+                                                       block=True
+                                                       )
+                                        )
                                     )
-                            ),
-                        ]),
-                    ]),
-                    dbc.Col([
-                        dbc.Row([
+                            ]),
                             dbc.Col(
-                                daq.Indicator(
-                                    id='stoped',
-                                    label="Stoped",
+                                lg=4,
+                                xs=6,
+                                children=[
+                                    dbc.Row(
+                                        dbc.Col(
+                                            daq.Indicator(
+                                                id='stoped',
+                                                label="Stoped",
+                                                color="#FFB5B5"
+                                            )
+                                        )
+                                    ),
+                                    dbc.Row(
+                                        dbc.Col(
+                                            dbc.Button('STOP',
+                                                       id='stop',
+                                                       color="danger",
+                                                       size="sm",
+                                                       block=True
+                                                       )
+                                        )
                                     )
-                            ),
-                        ]),
-                        dbc.Row([
-                            dbc.Col(
-                                daq.StopButton(
-                                    buttonText='stop',
-                                    id='stop',
-                                    )
-                            ),
-                        ]),
-                    ]),
-                ],
-            ),
-        ]),
-        ],
+                                ])
+                        ])
+                ])
+        ]
     )
 
-
-def time_setting_div(timenow, h,m,s):
-    return dbc.Row(
+def time_setting_div(timenow):
+    return dbc.Card(
         className="time-settings-tab",
         children=[
-            # Title
             dbc.Col(
                 className="Title",
                 children=[html.H3(
-                    "Time", id="time-title", style={"color": theme["primary"]}
+                    "Time", id="time-title"
                 ),
-            # Power Controllers
-            dbc.Row(
-                children=[
-                    dbc.Col([
-                        dbc.Row([
-                            dbc.Col([
-                                daq.LEDDisplay(
-                                    id='timeconf-knob-output',
-                                    value=timenow,
-                                    size=15,
-                                    label="Test duration",
-                                    labelPosition="top",
-                                    color=theme["primary"],
-                                    className="led-displays"
-                                    ),
-                            ])
-                        ]),
-                        dbc.Row([
-                            dbc.Col([
-                                daq.NumericInput(
-                                    id="hours-input",
-                                    value=h,
-                                    min=0,
-                                    max=24,
-                                    className="time-inputs",
-                                    ),
-                            ]),
-                            dbc.Col([
-                                daq.NumericInput(
-                                    id="minutes-input",
-                                    value=m,
-                                    min=0,
-                                    max=59,
-                                    className="time-inputs",
-                                    ),
+                    dbc.Row(
+                    className="timeset-buttons",
+                    children=[
+                        dbc.Col([
+                            dbc.Row(
+                                dbc.Col(
+                                    daq.LEDDisplay(
+                                        id='timeconf-knob-output',
+                                        value=timenow,
+                                        size=15,
+                                        label="Test duration",
+                                        labelPosition="top",
+                                        className="led-displays"
+                                    )
+                                )
+                            ),
+                            dbc.Row(
+                                dbc.Col(
+                                    dbc.Input(
+                                        id="time-input",
+                                        value=timenow,
+                                        min=0,
+                                        max=59,
+                                        step=1,
+                                        type="time",
+                                        className="time-inputs",
+                                    )
 
-                            ]),
-                            dbc.Col([
-                                daq.NumericInput(
-                                    id="seconds-input",
-                                    value=s,
-                                    min=0,
-                                    max=59,
-                                    className="time-inputs",
-                                    ),
-                            ]),
+                                )
+                            )
                         ]),
-                    ]),
-                    dbc.Col(
-                        dbc.Row([
-                            dbc.Col([
-                                daq.LEDDisplay(
-                                    id='testtime-now',
-                                    value="0:00:00",
-                                    size=15,
-                                    label="Test now",
-                                    labelPosition="top",
-                                    color=theme["primary"],
-                                    className="four columns"
-                                    ),
-                            ]),
-                        ])
-                    ),
-                ],
-            ),
-        ]),
-        ],
+                        dbc.Col([
+                            dbc.Row(
+                                dbc.Col(
+                                    daq.LEDDisplay(
+                                        id='testtime-now',
+                                        value="0:00:00",
+                                        size=20,
+                                        label="Test now",
+                                        labelPosition="top",
+                                    )
+                                )
+                            ),
+                            dbc.Row(
+                                dbc.Button(                               
+                                    [dbc.Spinner(size="sm")],
+                                    id='output',
+                                    color="primary",
+                                    disabled=True,
+                                    block=True
+                                )
+                            )
+                        ]
+                        )
+                    ]
+                )
+            ])
+        ]
     )
 
-
-
 def connections_setting_div(onconf, offconf):
-    return dbc.Row(
-        className="row connections-settings-tab",
+    return dbc.Card(
+        className="connections-settings-tab",
         children=[
             dbc.Col(
-                className="Title",
-                children=[html.H3(
-                    "Function", id="function-title", style={"color": theme["primary"]}
-                    ),
-            dbc.Row(className="confiigtime-buttons",
-                children=[
-                    dbc.Col([
-                        dbc.Row([
-                            dbc.Col([
-                                daq.Knob(
-                                    value=onconf,
-                                    id="onconf-input",
-                                    label="ON Config (s)",
-                                    labelPosition="bottom",
-                                    size=50,
-                                    color=theme["primary"],
-                                    max=10,
-                                    min=0.1,
-                                    style={"backgroundColor": "transparent"},
-                                    className="five columns",
+                children=[html.H3("Function", id="connections-title"),
+                    dbc.Row(
+                    className="connections-buttons",
+                    children=[
+                        dbc.Col(
+                            xs=6,
+                            children=[
+                                dbc.Row(
+                                    dbc.Col(
+                                        daq.Knob(
+                                            value=onconf,
+                                            id="onconf-input",
+                                            label="ON Config (s)",
+                                            labelPosition="bottom",
+                                            size=70,
+                                            max=10,
+                                            min=0.1,
+                                        )
+                                    )
                                 ),
+                                dbc.Row(
+                                    dbc.Col(
+                                        daq.LEDDisplay(
+                                            id="onconf-display",
+                                            size=10,
+                                            value=onconf,
+                                            label="ON Config (s)",
+                                            labelPosition="bottom",
+                                        )
+                                    )
+                                )
                             ]),
-                        ]),
-                        dbc.Row([
-                            dbc.Col([
-                                daq.LEDDisplay(
-                                    id="onconf-display",
-                                    size=10,
-                                    value=onconf,
-                                    label="ON Config (s)",
-                                    labelPosition="bottom",
-                                    color=theme["primary"],
-                                    className="five columns",
+                        dbc.Col(
+                            xs=6,
+                            children=[
+                                dbc.Row(
+                                    dbc.Col(
+                                        daq.Knob(
+                                            value=offconf,
+                                            id="offconf-input",
+                                            label="OFF Config (s)",
+                                            labelPosition="bottom",
+                                            size=70,
+                                            max=10,
+                                            min=0.1,
+                                        )
+                                    )
                                 ),
-                            ]),
-                        ]),
-                    ]),
-                    dbc.Col([
-                        dbc.Row([
-                            dbc.Col([
-                                daq.Knob(
-                                    value=offconf,
-                                    id="offconf-input",
-                                    label="OFF Config (s)",
-                                    labelPosition="bottom",
-                                    size=50,
-                                    color=theme["primary"],
-                                    max=10,
-                                    min=0.1,
-                                    className="five columns",
-                                ),
-                            ]),
-                        ]),
-                        dbc.Row([
-                            dbc.Col([
-                                daq.LEDDisplay(
-                                    id="offconf-display",
-                                    size=10,
-                                    value=offconf,
-                                    label="OFF Config (s)",
-                                    labelPosition="bottom",
-                                    color=theme["primary"],
-                                    className="five columns",
-                                ),
-                            ]),
-                        ]),
-                    ]),
-                ]
-            ),
-        ]),
-        ],
+                                dbc.Row(
+                                    dbc.Col(
+                                        daq.LEDDisplay(
+                                            id="offconf-display",
+                                            size=10,
+                                            value=offconf,
+                                            label="OFF Config (s)",
+                                            labelPosition="bottom",
+                                        )
+                                    )
+                                )
+                            ])
+                    ]
+                )
+                ])
+        ]
     )
 
 def home():
@@ -338,97 +334,100 @@ def home():
     onconf = data['onconf']
     offconf = data['offconf']
     timenow = data['timeconf']
-    testno = JSONS().readtestjson()['testID']
-    (h, m, s) = timenow.split(':')
     return dbc.Row(
-            className="row",
-            children=[
-                # LEFT PANEL - TEST SETTINGS
-                dbc.Col(
-                    width=4,
-                    children=[
-                        onoff_setting_div(testno),
-                        time_setting_div(timenow, h,m,s),
-                        connections_setting_div(onconf, offconf),
-                        niepotrzebne(),
-                    ],
-                ),
-                # RIGHT PANEL - TEST INFO
-                dbc.Col(
-                    width=8,
-                    children=[
+        children=[
+            # LEFT PANEL - TEST SETTINGS
+            dbc.Col(
+                className="left-panel",
+                md=4,
+                xs=12,
+                children=[
+                    onoff_setting_div(),
+                    time_setting_div(timenow),
+                    connections_setting_div(onconf, offconf),
+                ],
+            ),
+            # RIGHT PANEL - TEST INFO
+            dbc.Col(
+                className="right-panel",
+                md=8,
+                xs=12,
+                children=[
+                    dbc.Card(
+                        children=[
+                        dbc.Col(html.H3("Test info", id="test-title")),
+                        test_info(),
+                        dbc.Col(html.H3("Graph", id="graph-title")),
                         dbc.Row(
-                            className="right-panel",
-                            children=[
-                                    dbc.Col(
-                                        className="Title",
-                                        children=html.H3(
-                                            "Graph", id="graph-title", style={"color": theme["primary"]}
-                                        ),
-                                    ),
-                                ],
+                        className="right-panel-graph",
+                        children=[dbc.Col(id="time_series_chart_col_now"),
+                        dcc.Interval(id='interval', interval=500),
+                        ],
                         ),
+                    ])
+                ],
+            ),
+        ]
+    ),
 
-                        dbc.Row(
-                            className="right-panel-graph",
-                            children=[
-                                dbc.Col([test_info()]),
-                            ],
-                        ),
-                        dbc.Row(
-                                dbc.Col(id="time_series_chart_col_now"),
-                        )
-                    ],
-                ),
-            dcc.Interval(id='interval', interval=500),
-            ],
-        ),
-   
-   
+##################### HISTORY #########################
+def get_sensor_types():
+    sql = """
+        --Get the labels and underlying values for the dropdown menu "children"
+        SELECT 
+            distinct 
+            id || ' - Started: ' || to_char(started, 'DD-MM-YYYY HH24:MI:SS') as label,
+            id as value
+        FROM tests
+        ORDER BY id DESC;
+    """
+    with Database() as db:
+        types = db.query(sql)
+        db.close
+        return types
+
 def history():
     types = get_sensor_types()
-    return dbc.Col(
-            width=12,
-            children=[
-                dbc.Row(
-                    className="right-panel",
-                    children=[
-                            dbc.Col(
-                                className="Title",
-                                children=html.H3(
-                                    "Graph", id="graph-title", style={"color": theme["primary"]}
-                                ),
-                            ),
-                        ],
-                ),
-
-                dbc.Row(
-                    className="right-panel-graph",
-                    children=[
-                        dbc.Col([
-                            dcc.Dropdown(
+    return dbc.Row(
+        className="history",
+        children=[
+            dbc.Col([
+                html.H3("Graph", id="graph-title"),
+                dbc.Row([
+                    dbc.Col(
+                        dcc.Dropdown(
                                 id='demo-dropdown',
                                 options=types,
-                                value=types[0]["label"]
-                            ),
-
-                        ]),
-                    ],
-                ),
+                                value=types[0]["value"]
+                            )
+                    )
+                ]),
                 dbc.Row([
-                        html.Div(id="time_series_chart_col"),
-                ]
-                )
-            ],
-        ),
+                    dbc.Col(
+                        dbc.Spinner(
+                            spinner_style={"width": "30rem", "height": "30rem"},
+                            color="success",
+                            type="border",
+                            children=[
+                            html.Div(id="time_series_chart_col"),
+                            ]
+                        )
+                    )
+                ]),
+            ])
+        ]
+    )
 
-
+###################### MAIN ###########################
 def get_layout():
     """Function to get Dash's "HTML" layout"""
 
-    # A Bootstrap 4 container holds the rest of the layout
-    return html.Div([
-    dcc.Location(id='url', refresh=False),
-    get_navbar(),
-    html.Div(id='page-content')
-])
+    return dbc.Container(
+                fluid=True,
+                className="main",
+                    children=[
+                    dcc.Location(id='url', refresh=False),
+                    get_navbar(),
+                    dbc.Col(
+                        id='page-content')
+                    ])
