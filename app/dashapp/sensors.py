@@ -64,6 +64,7 @@ class Sensors:
         self.nowstamp = nowstamp
         self.timeconf = aa
         confdata = JSONS().readconfjson()
+        # self.timeconf = confdata['timeconf']
         self.onconf = confdata['onconf']
         self.offconf = confdata['offconf']
 

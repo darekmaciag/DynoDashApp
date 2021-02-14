@@ -31,7 +31,7 @@ def get_navbar():
                     dbc.Row(
                         [
                             dbc.Col(html.Img(src=PLOTLY_LOGO, height="30px")),
-                            dbc.Col(dbc.NavbarBrand("Badanie częstści łączeń silnika", className="ml-2")),
+                            dbc.Col(dbc.NavbarBrand("Badanie częstości łączeń silnika", className="ml-2")),
                         ],
                         align="center",
                         no_gutters=False,
@@ -277,7 +277,7 @@ def connections_setting_div(onconf, offconf):
                                             id="onconf-input",
                                             label="ON Config (s)",
                                             labelPosition="bottom",
-                                            size=70,
+                                            size=90,
                                             max=10,
                                             min=0.1,
                                         )
@@ -287,7 +287,7 @@ def connections_setting_div(onconf, offconf):
                                     dbc.Col(
                                         daq.LEDDisplay(
                                             id="onconf-display",
-                                            size=10,
+                                            size=15,
                                             value=onconf,
                                             label="ON Config (s)",
                                             labelPosition="bottom",
@@ -305,7 +305,7 @@ def connections_setting_div(onconf, offconf):
                                             id="offconf-input",
                                             label="OFF Config (s)",
                                             labelPosition="bottom",
-                                            size=70,
+                                            size=90,
                                             max=10,
                                             min=0.1,
                                         )
@@ -315,7 +315,7 @@ def connections_setting_div(onconf, offconf):
                                     dbc.Col(
                                         daq.LEDDisplay(
                                             id="offconf-display",
-                                            size=10,
+                                            size=15,
                                             value=offconf,
                                             label="OFF Config (s)",
                                             labelPosition="bottom",
@@ -409,7 +409,8 @@ def history():
                             color="success",
                             type="border",
                             children=[
-                            html.Div(id="time_series_chart_col"),
+                                html.Div(id="dd-output-container"),
+                                html.Div(id="time_series_chart_col"),
                             ]
                         )
                     )

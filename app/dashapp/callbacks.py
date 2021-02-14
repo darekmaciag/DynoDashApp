@@ -1,3 +1,4 @@
+from os import name
 from app.dashapp.layout import home, history, onoff_setting_div, connections_setting_div
 import dash
 import dash_core_components as dcc
@@ -12,13 +13,15 @@ import threading
 import pandas as pd
 import plotly.graph_objs as go
 import dash_bootstrap_components as dbc
+from plotly.subplots import make_subplots
+import plotly.tools as tls
 
 semaphore = Semaphore()
 
 axis_color = {"dark": "#EBF0F8", "light": "#506784"}
 marker_color = {"dark": "#f2f5fa", "light": "#2a3f5f"}
 
-##################### Motor loger ############################
+##################### Motor logger ##########################
 def run_motor():
     if semaphore.is_locked():
         raise Exception("aaa")
@@ -31,19 +34,23 @@ def run_motor():
     semaphore.unlock()
     return datetime.datetime.now()
 
-##################### History chart ###########################
+##################### History chart #########################
 def get_sensor_time_series_data(test_id):
     sql = f"""
         SELECT 
             time_bucket('00:00:01'::interval, time) as time,
             test_id,
             avg(temperature) as temperature,
-            avg(onconf) as cpu
+            avg(onconf+temperature)/2 as cpu,
+            offconf,
+            onconf
         FROM sensor_data
         WHERE test_id = {test_id}
         GROUP BY 
             time_bucket('00:00:01'::interval, time), 
-            test_id
+            test_id,
+            offconf,
+            onconf
         ORDER BY 
             time_bucket('00:00:01'::interval, time), 
             test_id;
@@ -59,37 +66,17 @@ def get_sensor_time_series_data(test_id):
 
 def get_graph(trace, title):
     return dcc.Graph(
-        # Disable the ModeBar with the Plotly logo and other buttons
         config=dict(
             displayModeBar=True
         ),
         figure=go.Figure(
-            data=[trace],
+            data=trace,
             layout=go.Layout(
                 title=title,
                 plot_bgcolor="white",
                 xaxis=dict(
                     autorange=True,
-                    # Time-filtering buttons above chart
-                    rangeselector=dict(
-                        buttons=list([
-                            dict(count=1,
-                                label="1d",
-                                step="day",
-                                stepmode="backward"),
-                            dict(count=7,
-                                label="7d",
-                                step="day",
-                                stepmode="backward"),
-                            dict(count=1,
-                                label="1m",
-                                step="month",
-                                stepmode="backward"),
-                            dict(step="all")
-                        ])
-                    ),
                     type = "date",
-                    # Alternative time filter slider
                     rangeslider = dict(
                         visible = True
                     )
@@ -98,28 +85,7 @@ def get_graph(trace, title):
         )
     )
 
-###################### History now ############################
-def get_now_graph(trace, title):
-    return dcc.Graph(
-        # Disable the ModeBar with the Plotly logo and other buttons
-        config=dict(
-            displayModeBar=False
-        ),
-        figure=go.Figure(
-            data=[trace],
-            layout=go.Layout(
-                title=title,
-                plot_bgcolor="white",
-                xaxis=dict(
-                    autorange=True,
-                    # Time-filtering buttons above chart
-                    type = "date",
-                    # Alternative time filter slider
-                )
-            )
-        )
-    )
-
+###################### Current chart ########################
 def now_data():
     lasttest = JSONS().readtestjson()["testID"]
     sql = f"""
@@ -127,12 +93,16 @@ def now_data():
             time_bucket('00:00:01'::interval, time) as time,
             test_id,
             avg(temperature) as temperature,
-            avg(onconf) as cpu
+            avg(onconf+temperature)/2 as cpu,
+            offconf,
+            onconf
         FROM sensor_data
         WHERE test_id = {lasttest}
         GROUP BY 
             time_bucket('00:00:01'::interval, time), 
-            test_id
+            test_id,
+            offconf,
+            onconf
         ORDER BY 
             time_bucket('00:00:01'::interval, time), 
             test_id;
@@ -146,10 +116,30 @@ def now_data():
     # print("columns",columns)
     return df
 
-############# REGISTER CALLBACKS ##############################
+def get_current_graph(trace, title):
+    return dcc.Graph(
+        config=dict(
+            displayModeBar=False
+        ),
+        figure=go.Figure(
+            data=trace,
+            layout=go.Layout(
+                title=title,
+                plot_bgcolor="white",
+                xaxis=dict(
+                    autorange=True,
+                    type = "date",
+                )
+            )
+        )
+    )
+
+
+
+############# REGISTER CALLBACKS ############################
 def register_callbacks(dash_app):
 
-##################### test info ###############################
+##################### test info #############################
     @dash_app.callback(
         Output('running-indicator', 'value'),
         Input('interval', 'n_intervals'))
@@ -231,12 +221,12 @@ def register_callbacks(dash_app):
         testno = str(data['testID'])
         return started_value, finished_value, status_value, testno, testno
 
-##################### chart #################################
+##################### chart history #########################
     @dash_app.callback(
         Output('dd-output-container', 'children'),
         [Input('demo-dropdown', 'value')])
     def update_output(value):
-        return 'You have selected "{}"'.format(value)
+        return 'Test No. : "{}"'.format(value)
 
     @dash_app.callback(
             Output("time_series_chart_col", "children"),
@@ -247,8 +237,10 @@ def register_callbacks(dash_app):
         x = df["time"]
         y1 = df["temperature"]
         y2 = df["cpu"]
+        y3 = df["onconf"]
+        y4 = df["offconf"]
         title = f"Location: {sensors_dropdown_value} - Type: {sensors_dropdown_value}"
-
+        fig = make_subplots()
         trace1 = go.Scatter(
             x=x,
             y=y1,
@@ -259,9 +251,23 @@ def register_callbacks(dash_app):
             y=y2,
             name="CPU"
         )
+        trace3 = go.Bar(
+            x=x,
+            y=y3,
+            name="onconf",
+        )
 
-        # Create two graphs using the traces above
-        graph1 = get_graph(trace1, title)
+        trace4 = go.Bar(
+            x=x,
+            y=y4,
+            name="offconf",
+        )
+
+        fig.add_trace(trace1)
+        fig.add_trace(trace2)
+        fig.add_trace(trace3)
+        fig.add_trace(trace4)
+        graph1 = get_graph(fig, title)
         graph2 = get_graph(trace2, title)
 
         return dbc.Col(
@@ -271,6 +277,7 @@ def register_callbacks(dash_app):
             ]
         )
 
+##################### Chart now #############################
     @dash_app.callback(
             Output("time_series_chart_col_now", "children"),
             [Input("interval", "n_intervals")],
@@ -279,28 +286,49 @@ def register_callbacks(dash_app):
         df = now_data()
         x = df["time"]
         y1 = df["temperature"]
-        # y2 = df["cpu"]
+        y2 = df["cpu"]
+        y3 = df["onconf"]
+        y4 = df["offconf"]
+
         title = f"Now"
+        fig = make_subplots()
+
 
         trace1 = go.Scatter(
             x=x,
             y=y1,
-            name="Temp"
+            name="Sensor 1"
         )
-        # trace2 = go.Scatter(
-        #     x=x,
-        #     y=y2,
-        #     name="CPU"
-        # )
 
-        # Create two graphs using the traces above
-        graph1 = get_now_graph(trace1, title)
-        # graph2 = get_now_graph(trace2, title)
+        trace2 = go.Scatter(
+            x=x,
+            y=y2,
+            name="Sensor 2"
+        )
+        
+        trace3 = go.Bar(
+            x=x,
+            y=y3,
+            name="onconf",
+        )
+
+        trace4 = go.Bar(
+            x=x,
+            y=y4,
+            name="offconf",
+        )
+
+        fig.add_trace(trace1)
+        fig.add_trace(trace2)
+        fig.add_trace(trace3)
+        fig.add_trace(trace4)
+        fig.update_layout(showlegend=False)
+
+        graph1 = get_current_graph(fig, title)
 
         return html.Div(
             [
                 dbc.Row(dbc.Col(graph1)),
-                # dbc.Row(dbc.Col(graph2)),
             ]
         )
 
