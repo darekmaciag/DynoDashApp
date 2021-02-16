@@ -12,7 +12,6 @@ def register_dashapps(app):
     'hello': 'world'
     }
 
-    # external CSS stylesheets
     external_stylesheets = [dbc.themes.SKETCHY]
     
     # external JavaScript files
@@ -23,7 +22,6 @@ def register_dashapps(app):
         "https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js",
     ]
 
-    # To ensure proper rendering and touch zooming for all devices, add the responsive viewport meta tag
     meta_viewport = [{
         "name": "viewport", 
         "content": "width=device-width, initial-scale=1, shrink-to-fit=no"
@@ -31,10 +29,8 @@ def register_dashapps(app):
 
     dashapp = dash.Dash(
         __name__,
-        # This is where the Flask app gets appointed as the server for the Dash app
         server = app,
         url_base_pathname = '/',
-        # Separate assets folder in "static_dash" (optional)
         assets_folder = get_root_path(__name__) + '/static_dash/', 
         meta_tags = meta_viewport, 
         external_scripts = external_scripts,
@@ -60,14 +56,10 @@ def register_dashapps(app):
     from app.dashapp.layout import get_layout
     from app.dashapp.callbacks import register_callbacks
     from app.dashapp.motor import task1
-
+    import redis
     with app.app_context():
-
-        # Assign the get_layout function without calling it yet
         dashapp.layout = get_layout
         
-        # Register callbacks
-        # Layout must be assigned above, before callbacks
         register_callbacks(dashapp)
 
     return None

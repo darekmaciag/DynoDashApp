@@ -12,11 +12,11 @@ import dash_daq as daq
 import dash_bootstrap_components as dbc
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from app.dashapp.sensors import JSONS, Database
+from app.dashapp.sensors import Database
+import redis
 
-axis_color = {"dark": "#EBF0F8", "light": "#506784"}
-marker_color = {"dark": "#f2f5fa", "light": "#2a3f5f"}
 
+r=redis.Redis()
 
 PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
@@ -330,10 +330,9 @@ def connections_setting_div(onconf, offconf):
     )
 
 def home():
-    data = JSONS().readconfjson()
-    onconf = data['onconf']
-    offconf = data['offconf']
-    timenow = data['timeconf']
+    onconf = float(r.get("onconf").decode())
+    offconf = float(r.get("offconf").decode())
+    timenow = str(r.get("timeconf").decode())
     return dbc.Row(
         children=[
             # LEFT PANEL - TEST SETTINGS
@@ -376,7 +375,7 @@ def get_sensor_types():
         --Get the labels and underlying values for the dropdown menu "children"
         SELECT 
             distinct 
-            id || ' - Started: ' || to_char(started, 'DD-MM-YYYY HH24:MI:SS') as label,
+            id || ' - Started: ' || to_char(started, 'DD-MM-YYYY HH24:MI:SS') || ' - Finished: ' || to_char(finished, 'DD-MM-YYYY HH24:MI:SS')as label,
             id as value
         FROM tests
         ORDER BY id DESC;

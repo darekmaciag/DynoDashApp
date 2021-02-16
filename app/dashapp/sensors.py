@@ -4,9 +4,11 @@ from datetime import date, datetime
 import time
 import json
 from random import randint
+
+import redis
 from app.database import Database
 import json
-
+r=redis.Redis()
 
 class Semaphore:
     def __init__(self, filename='test.txt'):
@@ -26,48 +28,15 @@ class Semaphore:
         return open(self.filename, 'r').read() == 'working'
 
 
-class JSONS:
-    def __init__(self):
-        self.open = open('data.json', 'r+')
-        self.confj = open('confdata.json', 'r+')
-        self.testj = open('testdata.json', 'r+')
-        self.outputj = open('outputdata.json', 'r+')
-
-    def readjson(self):
-        data = json.load(self.open)
-        return data
-
-    def readconfjson(self):
-        data = json.load(self.confj)
-        return data
-
-    def readtestjson(self):
-        data = json.load(self.testj)
-        return data
-
-    def readoutputjson(self):
-        data = json.load(self.outputj)
-        return data
-    
-    def writestatus(self, row, value):
-        data = json.load(self.confj)
-        data[row] = value # <--- add `id` value.
-        self.confj.seek(0)        # <--- should reset file position to the beginning.
-        json.dump(data, self.confj, indent=4)
-        self.confj.truncate()
-
-
 class Sensors:
     def __init__(self, nowstamp, aa):
-        testdata = JSONS().readtestjson()
-        self.testID = testdata['testID']
+        self.testID = int(r.get("testID").decode())
         self.nowstamp = nowstamp
         self.timeconf = aa
-        confdata = JSONS().readconfjson()
-        # self.timeconf = confdata['timeconf']
-        self.onconf = confdata['onconf']
-        self.offconf = confdata['offconf']
-
+        # self.timeconf = str(r.get("onconf").decode())
+        self.onconf = float(r.get("onconf").decode())
+        self.offconf = float(r.get("offconf").decode())
+        
     def get_sensor_data(self, speed, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6, temperature7, temperature8, ):
         self.speed = speed
         self.temperature1 = temperature1
@@ -91,9 +60,17 @@ class Tests:
         self.started = datetime.now()
         self.finished = datetime.now()
 
+    def get_lastID(self):
+        with Database() as db:
+            query = """SELECT id FROM tests order by id desc limit 1"""
+            data = db.query(query)
+            db.close
+            lastID = data[0]["id"]
+            return lastID
+
     def create_test(self):
         self.status = False
-        testid = JSONS().readtestjson()['testID'] + 1
+        testid = self.get_lastID()+1
         with Database() as db:
             query = """ INSERT INTO tests(id, status, started, finished) VALUES (%s,%s,%s,%s) RETURNING *"""
             valuses = (testid, self.status, self.started, self.finished)
@@ -101,19 +78,16 @@ class Tests:
             db.close
             updateTestInfo(testid, self.status, self.started, self.finished)
 
-
     def finish_test(self):
         self.status = True
-        data = JSONS().readtestjson()
-        testid = data['testID']
-        oldstarted = data['started'] # <--- add `id` value.
+        testid = self.get_lastID()
+        oldstarted = str(r.get("started").decode())
         with Database() as db:
             query = """ UPDATE tests SET status = (%s), finished = (%s) WHERE id = (%s)"""
             valuses = (self.status, self.finished, testid)
             db.execute(query, valuses)
             db.close
             updateTestInfo(testid, self.status, oldstarted, self.finished)
-
 
 def updateSensorInfo(testID, timeconf, onconf, offconf, speed, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6, temperature7, temperature8):
     jsonFile = open("outputdata.json", "r") # Open the JSON file for reading
@@ -142,24 +116,16 @@ def updateSensorInfo(testID, timeconf, onconf, offconf, speed, temperature1, tem
     jsonFile.close()
 
 def updateTestInfo(id, status, started, finished):
-    jsonFile = open("testdata.json", "r") # Open the JSON file for reading
-    data = json.load(jsonFile) # Read the JSON into the buffer
-    jsonFile.close() # Close the JSON file
     print("-------------------------")
     print("test: ",id, status, started, finished)
     print("-------------------------")
-
     ## Working with buffered content
-    data['testID'] = id
-    data["status"] = status
-    data["started"] = str(started)[:19]
-    data["finished"] = str(finished)[:19]
-
-    ## Save our changes to JSON file
-    jsonFile = open("testdata.json", "w+")
-    jsonFile.write(json.dumps(data, indent=4))
-    jsonFile.close()
-
+    r.mset({
+        "testID": id,
+        "status": str(status),
+        "started": str(started)[:19],
+        "finished": str(finished)[:19],
+    })
 
 
 # Tests().create_test(True)

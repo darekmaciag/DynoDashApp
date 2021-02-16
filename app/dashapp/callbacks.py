@@ -4,7 +4,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
-from app.dashapp.sensors import Semaphore, JSONS, Tests, Database
+from app.dashapp.sensors import Semaphore, Tests, Database
 from subprocess import call
 import datetime
 from dash.exceptions import PreventUpdate
@@ -15,11 +15,13 @@ import plotly.graph_objs as go
 import dash_bootstrap_components as dbc
 from plotly.subplots import make_subplots
 import plotly.tools as tls
+from dateutil import parser
+import redis
 
+
+r=redis.Redis()
 semaphore = Semaphore()
 
-axis_color = {"dark": "#EBF0F8", "light": "#506784"}
-marker_color = {"dark": "#f2f5fa", "light": "#2a3f5f"}
 
 ##################### Motor logger ##########################
 def run_motor():
@@ -27,9 +29,9 @@ def run_motor():
         raise Exception("aaa")
     semaphore.lock()
     Tests().create_test()
-    JSONS().writestatus("on", True)
+    r.set("power", "on")
     task1(True)
-    JSONS().writestatus("on", False)
+    r.set("power", "off")
     Tests().finish_test()
     semaphore.unlock()
     return datetime.datetime.now()
@@ -87,7 +89,7 @@ def get_graph(trace, title):
 
 ###################### Current chart ########################
 def now_data():
-    lasttest = JSONS().readtestjson()["testID"]
+    lasttest = int(r.get("testID").decode())
     sql = f"""
         SELECT 
             time_bucket('00:00:01'::interval, time) as time,
@@ -150,9 +152,8 @@ def register_callbacks(dash_app):
         Output('testtime-now', 'value'),
         Input('interval', 'n_intervals'))
     def display_test_info(n_intervals):
-        timeconfig = JSONS().readtestjson()
-        nowtime = datetime.datetime.now() - datetime.datetime.strptime(timeconfig['started'], '%Y-%m-%d %H:%M:%S')
-        finished_time = datetime.datetime.strptime(timeconfig['finished'], '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(timeconfig['started'], '%Y-%m-%d %H:%M:%S')
+        nowtime = datetime.datetime.now() - parser.parse(str(r.get("started").decode()))
+        finished_time = parser.parse(str(r.get("finished").decode())) - parser.parse(str(r.get("started").decode()))
         now = str(nowtime)[:7]
         fin = str(finished_time)[:7]
         if semaphore.is_locked():
@@ -174,7 +175,7 @@ def register_callbacks(dash_app):
     def stop_loging_process(n_clicks):
         if not n_clicks:
             raise PreventUpdate
-        JSONS().writestatus("on", False)
+        r.set("power", "off")
         return True, task1(False)
 
 ##################### config ################################
@@ -184,7 +185,7 @@ def register_callbacks(dash_app):
     def update_testtime(value):
         if value is None:
             raise PreventUpdate
-        JSONS().writestatus("timeconf", str(value))
+        r.set("timeconf", str(value))
         return str(value)
 
     @dash_app.callback(
@@ -193,7 +194,7 @@ def register_callbacks(dash_app):
     def update_oncof(value):
         if value is None:
             raise PreventUpdate
-        JSONS().writestatus("onconf", value)
+        r.set("onconf", value)
         return value
 
     @dash_app.callback(
@@ -202,7 +203,7 @@ def register_callbacks(dash_app):
     def update_offconf(value):
         if value is None:
             raise PreventUpdate
-        JSONS().writestatus("offconf", value)
+        r.set("offconf", value)
         return value
 
     @dash_app.callback([
@@ -214,11 +215,11 @@ def register_callbacks(dash_app):
         ],
         Input('interval', 'n_intervals'))
     def display_testinfo(n_intervals):
-        data = JSONS().readtestjson()
-        started_value = str(data['started'])
-        finished_value = str(data['finished'])
-        status_value = str(data['status'])
-        testno = str(data['testID'])
+        (a,b,c,d) = r.mget("started", "finished", "status", "testID")
+        started_value = str(a.decode())
+        finished_value = str(b.decode())
+        status_value = str(c.decode())
+        testno = str(d.decode())
         return started_value, finished_value, status_value, testno, testno
 
 ##################### chart history #########################

@@ -1,53 +1,51 @@
 import time, json
 import datetime
 from multiprocessing import Process
-from app.dashapp.sensors import JSONS, Sensors
+from app.dashapp.sensors import Sensors
 import threading
 from concurrent.futures import ProcessPoolExecutor, as_completed
-
-def checkfile():
-    with open('data.json', 'r+') as f:
-        data = json.load(f)
-    return data
-
+import redis
+r=redis.Redis()
 
 def czytaj_sensory():
-    data = JSONS().readjson()
-    temperature1 = data["temperature1"]
-    temperature2 = data["temperature2"]
-    temperature3 = data["temperature3"]
-    temperature4 = data["temperature4"]
-    temperature5 = data["temperature5"]
-    temperature6 = data["temperature6"]
-    temperature7 = data["temperature7"]
-    temperature8 = data["temperature8"]
+    with open('outputdata.json', 'r+') as f:
+            data = json.load(f)
+            temperature1 = data["temperature1"]
+            temperature2 = data["temperature2"]
+            temperature3 = data["temperature3"]
+            temperature4 = data["temperature4"]
+            temperature5 = data["temperature5"]
+            temperature6 = data["temperature6"]
+            temperature7 = data["temperature7"]
+            temperature8 = data["temperature8"]
     return temperature1, temperature2, temperature3, temperature4, temperature5, temperature6, temperature7, temperature8
 
 
 def czytaj_dane():
-    data = JSONS().readjson()
-    speed = data["speed"]
+    with open('outputdata.json', 'r+') as f:
+            data = json.load(f)
+            speed = data["speed"]
     x = czytaj_sensory()
     Sensors(datetime.datetime.now(),datetime.datetime.now()).get_sensor_data(speed, x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7])
 
 
 def breakLoop():
-    statusofloop = JSONS().readconfjson()['on']
-    if statusofloop == False:
+    statusofloop = str(r.get("power").decode())
+    if statusofloop == "off":
         return False      
     else:
         return True
         
 def gettimedelta():
-    timeconfig = JSONS().readconfjson()['timeconf']
+    timeconfig = str(r.get("timeconf").decode())
     (h, m, s) = timeconfig.split(':')
     timedelda = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
     return timedelda      
 
         
-
 def task2():
     timeout = gettimedelta()
+    print(timeout)
     timeout_start = datetime.datetime.now()
     while True and breakLoop() and datetime.datetime.now() < timeout_start+ timeout:
         czytaj_dane()
@@ -67,24 +65,24 @@ def task1(task):
                 print("zalaczam lewo")
                 lewo = True
                 print("lewo",lewo)
-                time.sleep(JSONS().readconfjson()["onconf"])
+                time.sleep(float(r.get("onconf").decode()))
                 lewo = False
                 print("lewo", lewo)
                 wlaczony += 1
                 if not breakLoop():
                     break
-                time.sleep(JSONS().readconfjson()["offconf"])
+                time.sleep(float(r.get("offconf").decode()))
             elif lewo == False and prawo == False and (wlaczony % 2) != 0 and breakLoop():
                 print("zalaczam prawo")
                 prawo = True
                 print("prawo",prawo)
-                time.sleep(JSONS().readconfjson()["onconf"])
+                time.sleep(float(r.get("onconf").decode()))
                 prawo = False
                 print("prawo", prawo)
                 wlaczony += 1
                 if not breakLoop():
                     break
-                time.sleep(JSONS().readconfjson()["offconf"])
+                time.sleep(float(r.get("offconf").decode()))
             else:
                 print("cos nie tak")
                 prawo = False
