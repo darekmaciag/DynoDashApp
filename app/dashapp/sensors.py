@@ -29,11 +29,10 @@ class Semaphore:
 
 
 class Sensors:
-    def __init__(self, nowstamp, aa):
+    def __init__(self, nowstamp):
         self.testID = int(r.get("testID").decode())
         self.nowstamp = nowstamp
-        self.timeconf = aa
-        # self.timeconf = str(r.get("onconf").decode())
+        self.timeconf = str(r.get("timeconf").decode())
         self.onconf = float(r.get("onconf").decode())
         self.offconf = float(r.get("offconf").decode())
         
@@ -48,8 +47,8 @@ class Sensors:
         self.temperature7 = temperature7
         self.temperature8 = temperature8
         with Database() as db:
-            query = """ INSERT INTO sensor_data(test_id, time, timeconf, onconf, offconf, speed, sensor_id, temperature) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"""
-            valuses = (self.testID, self.nowstamp, self.timeconf, self.onconf, self.offconf, self.speed, 1, self.temperature1)
+            query = """ INSERT INTO sensor_data(test_id, time, timeconf, onconf, offconf, speed, temperature1, temperature2) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"""
+            valuses = (self.testID, self.nowstamp, self.timeconf, self.onconf, self.offconf, self.speed, self.temperature1, self.temperature2)
             db.execute(query, valuses)
             db.close
             updateSensorInfo(self.testID, self.timeconf, self.onconf, self.offconf, self.speed, self.temperature1, self.temperature2, self.temperature3, self.temperature4, self.temperature5, self.temperature6, self.temperature7, self.temperature8)
@@ -76,7 +75,7 @@ class Tests:
             valuses = (testid, self.status, self.started, self.finished)
             db.execute(query, valuses)
             db.close
-            updateTestInfo(testid, self.status, self.started, self.finished)
+            updateTestInfo(testid, self.status, self.started, str('On air'))
 
     def finish_test(self):
         self.status = True

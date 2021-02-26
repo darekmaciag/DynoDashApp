@@ -5,29 +5,10 @@ from app.dashapp.sensors import Sensors
 import threading
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import redis
+import RPi.GPIO as GPIO
+from w1thermsensor import W1ThermSensor
+
 r=redis.Redis()
-
-def czytaj_sensory():
-    with open('outputdata.json', 'r+') as f:
-            data = json.load(f)
-            temperature1 = data["temperature1"]
-            temperature2 = data["temperature2"]
-            temperature3 = data["temperature3"]
-            temperature4 = data["temperature4"]
-            temperature5 = data["temperature5"]
-            temperature6 = data["temperature6"]
-            temperature7 = data["temperature7"]
-            temperature8 = data["temperature8"]
-    return temperature1, temperature2, temperature3, temperature4, temperature5, temperature6, temperature7, temperature8
-
-
-def czytaj_dane():
-    with open('outputdata.json', 'r+') as f:
-            data = json.load(f)
-            speed = data["speed"]
-    x = czytaj_sensory()
-    Sensors(datetime.datetime.now(),datetime.datetime.now()).get_sensor_data(speed, x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7])
-
 
 def breakLoop():
     statusofloop = str(r.get("power").decode())
@@ -48,26 +29,34 @@ def task2():
     print(timeout)
     timeout_start = datetime.datetime.now()
     while True and breakLoop() and datetime.datetime.now() < timeout_start+ timeout:
-        czytaj_dane()
+        sensor1 = W1ThermSensor(sensor_id='8a1902ae86ff').get_temperature()
+        sensor2 = W1ThermSensor(sensor_id='8a1902c5a4ff').get_temperature()
+        Sensors(datetime.datetime.now()).get_sensor_data(1, sensor1, sensor2,3,4,5,6,7,8)
         time.sleep(1)
 
 def task1(task):
     executor = ProcessPoolExecutor(max_workers=1)
     executor.submit(task2)
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+    k1 = 20
+    k2 = 21
     lewo = False
     prawo = False
     wlaczony = 0
     timeout = gettimedelta()
     timeout_start = datetime.datetime.now()
     try:
+        GPIO.setup(k1, GPIO.OUT)
+        GPIO.setup(k2, GPIO.OUT)
         while task == True and breakLoop() and datetime.datetime.now() < timeout_start+ timeout:
             if lewo == False and prawo == False and (wlaczony % 2) == 0 and breakLoop():
                 print("zalaczam lewo")
                 lewo = True
-                print("lewo",lewo)
+                GPIO.output(k1, GPIO.HIGH)
                 time.sleep(float(r.get("onconf").decode()))
                 lewo = False
-                print("lewo", lewo)
+                GPIO.output(k1, GPIO.LOW)
                 wlaczony += 1
                 if not breakLoop():
                     break
@@ -75,10 +64,10 @@ def task1(task):
             elif lewo == False and prawo == False and (wlaczony % 2) != 0 and breakLoop():
                 print("zalaczam prawo")
                 prawo = True
-                print("prawo",prawo)
+                GPIO.output(k2, GPIO.HIGH)
                 time.sleep(float(r.get("onconf").decode()))
                 prawo = False
-                print("prawo", prawo)
+                GPIO.output(k2, GPIO.LOW)
                 wlaczony += 1
                 if not breakLoop():
                     break
@@ -87,12 +76,19 @@ def task1(task):
                 print("cos nie tak")
                 prawo = False
                 lewo = False
+                GPIO.output(k1, GPIO.LOW)
+                GPIO.output(k2, GPIO.LOW)
                 wlaczony = 0
                 break
     finally:
         print("Koniec")
         prawo = False
         lewo = False
+        GPIO.output(k1, GPIO.LOW)
+        GPIO.output(k2, GPIO.LOW)
+        channel_used = [20, 21]
+        for channel in channel_used:
+            GPIO.cleanup(channel)
         wlaczony = 0
 
 # if __name__ == '__main__':

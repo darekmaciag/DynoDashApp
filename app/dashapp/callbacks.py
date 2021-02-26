@@ -42,8 +42,8 @@ def get_sensor_time_series_data(test_id):
         SELECT 
             time_bucket('00:00:01'::interval, time) as time,
             test_id,
-            avg(temperature) as temperature,
-            avg(onconf+temperature)/2 as cpu,
+            avg(temperature1) as temperature1,
+            avg(temperature2) as temperature2,
             offconf,
             onconf
         FROM sensor_data
@@ -94,8 +94,8 @@ def now_data():
         SELECT 
             time_bucket('00:00:01'::interval, time) as time,
             test_id,
-            avg(temperature) as temperature,
-            avg(onconf+temperature)/2 as cpu,
+            avg(temperature1) as temperature1,
+            avg(temperature2) as temperature2,
             offconf,
             onconf
         FROM sensor_data
@@ -153,13 +153,11 @@ def register_callbacks(dash_app):
         Input('interval', 'n_intervals'))
     def display_test_info(n_intervals):
         nowtime = datetime.datetime.now() - parser.parse(str(r.get("started").decode()))
-        finished_time = parser.parse(str(r.get("finished").decode())) - parser.parse(str(r.get("started").decode()))
         now = str(nowtime)[:7]
-        fin = str(finished_time)[:7]
         if semaphore.is_locked():
             return now
         else:
-            return fin
+            return "00:00:00"
         
     @dash_app.callback(
         Output('output', 'children'),
@@ -236,8 +234,8 @@ def register_callbacks(dash_app):
     def get_time_series_chart(sensors_dropdown_value):
         df = get_sensor_time_series_data(sensors_dropdown_value)
         x = df["time"]
-        y1 = df["temperature"]
-        y2 = df["cpu"]
+        y1 = df["temperature1"]
+        y2 = df["temperature2"]
         y3 = df["onconf"]
         y4 = df["offconf"]
         title = f"Location: {sensors_dropdown_value} - Type: {sensors_dropdown_value}"
@@ -245,12 +243,12 @@ def register_callbacks(dash_app):
         trace1 = go.Scatter(
             x=x,
             y=y1,
-            name="Temp"
+            name="Temp1"
         )
         trace2 = go.Scatter(
             x=x,
             y=y2,
-            name="CPU"
+            name="Temp2"
         )
         trace3 = go.Bar(
             x=x,
@@ -286,8 +284,8 @@ def register_callbacks(dash_app):
     def get_time_series_chart_now(n_intervals):
         df = now_data()
         x = df["time"]
-        y1 = df["temperature"]
-        y2 = df["cpu"]
+        y1 = df["temperature1"]
+        y2 = df["temperature2"]
         y3 = df["onconf"]
         y4 = df["offconf"]
 
