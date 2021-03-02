@@ -8,7 +8,7 @@ from app.dashapp.sensors import Semaphore, Tests, Database
 from subprocess import call
 import datetime
 from dash.exceptions import PreventUpdate
-from app.dashapp.motor import task1, task2
+from app.dashapp.motor import task1, task2, task3
 import threading
 import pandas as pd
 import plotly.graph_objs as go
@@ -17,20 +17,57 @@ from plotly.subplots import make_subplots
 import plotly.tools as tls
 from dateutil import parser
 import redis
+import asyncio
 
 
 r=redis.Redis()
 semaphore = Semaphore()
 
+async def some_func():
+    t1 = asyncio.create_task(task1())
+    t2 = asyncio.create_task(task2())
+    statusofloop = str(r.get("power").decode())
+    if statusofloop == "on":
+        t3 = asyncio.create_task(task3())
+    timedel = gettimedelta()
+    end = datetime.datetime.now() + timedel
+    now = datetime.datetime.now()
+    await asyncio.sleep((end - now).total_seconds())
+    print('loop stopped since')
+    t1.cancel()
+    t2.cancel()
+    if statusofloop == "on":
+        t3.cancel
+
+async def cancel(task):
+    while True:
+        statusofloop = str(r.get("power").decode())
+        if statusofloop == "off":
+            return task.cancel()
+        await asyncio.sleep(0.5)
+
+def gettimedelta():
+    timeconfig = str(r.get("timeconf").decode())
+    (h, m, s) = timeconfig.split(':')
+    timedelda = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
+    print(timedelda)
+    return timedelda  
 
 ##################### Motor logger ##########################
-def run_motor():
+async def run_motor():
+    global func_task
     if semaphore.is_locked():
         raise Exception("aaa")
     semaphore.lock()
     Tests().create_test()
     r.set("power", "on")
-    task1(True)
+    print(f"Callback: {threading.current_thread().name}")
+    func_task = asyncio.create_task(some_func())
+    cancel_task = asyncio.ensure_future(cancel(func_task))
+    try:
+        await func_task
+    except asyncio.CancelledError:
+        print('Task cancelled as expected')
     r.set("power", "off")
     Tests().finish_test()
     semaphore.unlock()
@@ -96,8 +133,8 @@ def now_data():
             test_id,
             avg(temperature1) as temperature1,
             avg(temperature2) as temperature2,
-            offconf,
-            onconf
+            avg(offconf) as offconf,
+            avg(onconf) as onconf
         FROM sensor_data
         WHERE test_id = {lasttest}
         GROUP BY 
@@ -142,22 +179,35 @@ def get_current_graph(trace, title):
 def register_callbacks(dash_app):
 
 ##################### test info #############################
-    @dash_app.callback(
-        Output('running-indicator', 'value'),
-        Input('interval', 'n_intervals'))
-    def display_status(n_intervals):
-        return True if semaphore.is_locked() else False
-
-    @dash_app.callback(
+    @dash_app.callback([
         Output('testtime-now', 'value'),
+        Output('running-indicator', 'value'),
+    ],
         Input('interval', 'n_intervals'))
     def display_test_info(n_intervals):
         nowtime = datetime.datetime.now() - parser.parse(str(r.get("started").decode()))
         now = str(nowtime)[:7]
         if semaphore.is_locked():
-            return now
+            return now, True
         else:
-            return "00:00:00"
+            return "00:00:00", False
+
+    @dash_app.callback([
+        Output('test-started', 'children'),
+        Output('test-finished', 'children'),
+        Output('test-status', 'children'),
+        Output('test-id', 'children'),
+        Output('testno', "value")
+        ],
+        Input('interval', 'n_intervals'))
+    def display_testinfo(n_intervals):
+        (a,b,c,d) = r.mget("started", "finished", "status", "testID")
+        started_value = str(a.decode())
+        finished_value = str(b.decode())
+        status_value = str(c.decode())
+        testno = str(d.decode())
+        return started_value, finished_value, status_value, testno, testno
+
         
     @dash_app.callback(
         Output('output', 'children'),
@@ -165,7 +215,7 @@ def register_callbacks(dash_app):
     def run_loging_process(n_clicks):
         if not n_clicks:
             raise PreventUpdate
-        return run_motor()
+        return asyncio.run(run_motor())
 
     @dash_app.callback(
         Output('stoped', 'value'),
@@ -174,7 +224,7 @@ def register_callbacks(dash_app):
         if not n_clicks:
             raise PreventUpdate
         r.set("power", "off")
-        return True, task1(False)
+        return True
 
 ##################### config ################################
     @dash_app.callback(
@@ -203,22 +253,6 @@ def register_callbacks(dash_app):
             raise PreventUpdate
         r.set("offconf", value)
         return value
-
-    @dash_app.callback([
-        Output('test-started', 'children'),
-        Output('test-finished', 'children'),
-        Output('test-status', 'children'),
-        Output('test-id', 'children'),
-        Output('testno', "value")
-        ],
-        Input('interval', 'n_intervals'))
-    def display_testinfo(n_intervals):
-        (a,b,c,d) = r.mget("started", "finished", "status", "testID")
-        started_value = str(a.decode())
-        finished_value = str(b.decode())
-        status_value = str(c.decode())
-        testno = str(d.decode())
-        return started_value, finished_value, status_value, testno, testno
 
 ##################### chart history #########################
     @dash_app.callback(
