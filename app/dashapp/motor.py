@@ -12,16 +12,26 @@ from app.dashapp.PID import PID
 import os.path
 
 r=redis.Redis()
+
+async def reads(aa):
+    result = AsyncW1ThermSensor(sensor_id=aa)
+    temp = await result.get_temperature()
+    return temp
      
 async def task2():
     while True:
-        sensor1 = await AsyncW1ThermSensor(sensor_id='0008014a2604').get_temperature()
-        sensor2 = await AsyncW1ThermSensor(sensor_id='0008014a2f35').get_temperature()
-        sensor3 = await AsyncW1ThermSensor(sensor_id='0008014a3e9b').get_temperature()
-        sensor4 = await AsyncW1ThermSensor(sensor_id='0008014a6cd3').get_temperature()
-        sensor5 = await AsyncW1ThermSensor(sensor_id='000801f164a6').get_temperature()
-        sensor6 = await AsyncW1ThermSensor(sensor_id='000004bc4cae').get_temperature()
-        print(sensor1, sensor2,sensor3,sensor4,sensor5,sensor6)
+        sens1 = asyncio.create_task(reads('0008014a2604'))
+        sens2 = asyncio.create_task(reads('0008014a2f35'))
+        sens3 = asyncio.create_task(reads('0008014a3e9b'))
+        sens4 = asyncio.create_task(reads('0008014a6cd3'))
+        sens5 = asyncio.create_task(reads('000801f164a6'))
+        sens6 = asyncio.create_task(reads('000004bc4cae'))
+        sensor1 = await sens1
+        sensor2 = await sens2
+        sensor3 = await sens3
+        sensor4 = await sens4
+        sensor5 = await sens5
+        sensor6 = await sens6
         await asyncio.sleep(0.1)
         Sensors(datetime.datetime.now()).get_sensor_data(1, sensor1, sensor2,sensor3,sensor4,sensor5,sensor6,7,8)
 
@@ -107,11 +117,11 @@ async def task3():
 
         pid.update(temperature)
         targetPwm = pid.output
-        print("a", targetPwm)
+        # print("a", targetPwm)
         targetPwm = max(min( int(targetPwm), 100 ),0)
-        print("b", targetPwm)
-        print("Target: %.1f C | Current: %.1f C | PWM: %s %%"%(targetT, temperature, targetPwm))
+        # print("b", targetPwm)
+        # print("Target: %.1f C | Current: %.1f C | PWM: %s %%"%(targetT, temperature, targetPwm))
 
         # Set PWM expansion channel 0 to the target setting
-        print(targetPwm)
+        # print(targetPwm)
         await asyncio.sleep(0.5)
