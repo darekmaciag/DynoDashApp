@@ -21,6 +21,9 @@
     background-size: 46px 46px;
     background-position: 0 0,23px 23px;
 }
+.hidden{
+    display: none;
+}
 
 .row{
     padding: 5px;

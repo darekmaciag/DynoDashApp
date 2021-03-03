@@ -23,11 +23,12 @@ import asyncio
 r=redis.Redis()
 semaphore = Semaphore()
 
+##################### Motor logger ##########################
 async def some_func():
     t1 = asyncio.create_task(task1())
     t2 = asyncio.create_task(task2())
-    statusofloop = str(r.get("power").decode())
-    if statusofloop == "on":
+    pidtaskstatus = int(r.get("autopid").decode())
+    if pidtaskstatus == 1:
         t3 = asyncio.create_task(task3())
     timedel = gettimedelta()
     end = datetime.datetime.now() + timedel
@@ -36,13 +37,13 @@ async def some_func():
     print('loop stopped since')
     t1.cancel()
     t2.cancel()
-    if statusofloop == "on":
+    if pidtaskstatus == 1:
         t3.cancel
 
 async def cancel(task):
     while True:
-        statusofloop = str(r.get("power").decode())
-        if statusofloop == "off":
+        power_status = str(r.get("power").decode())
+        if power_status == "off":
             return task.cancel()
         await asyncio.sleep(0.5)
 
@@ -53,7 +54,6 @@ def gettimedelta():
     print(timedelda)
     return timedelda  
 
-##################### Motor logger ##########################
 async def run_motor():
     global func_task
     if semaphore.is_locked():
@@ -81,6 +81,12 @@ def get_sensor_time_series_data(test_id):
             test_id,
             avg(temperature1) as temperature1,
             avg(temperature2) as temperature2,
+            avg(temperature3) as temperature3,
+            avg(temperature4) as temperature4,
+            avg(temperature5) as temperature5,
+            avg(temperature6) as temperature6,
+            avg(avg_temp) as avg_temp,
+            avg(maxtemp) as maxtemp,
             offconf,
             onconf
         FROM sensor_data
@@ -99,8 +105,6 @@ def get_sensor_time_series_data(test_id):
         columns = [str.lower(x[0]) for x in db.cursor.description]
         db.close 
         df = pd.DataFrame(rows, columns=columns)
-    # print("rows",rows)
-    # print("columns",columns)
     return df
 
 def get_graph(trace, title):
@@ -112,6 +116,7 @@ def get_graph(trace, title):
             data=trace,
             layout=go.Layout(
                 title=title,
+                height=1700,
                 plot_bgcolor="white",
                 xaxis=dict(
                     autorange=True,
@@ -133,8 +138,14 @@ def now_data():
             test_id,
             avg(temperature1) as temperature1,
             avg(temperature2) as temperature2,
-            avg(offconf) as offconf,
-            avg(onconf) as onconf
+            avg(temperature3) as temperature3,
+            avg(temperature4) as temperature4,
+            avg(temperature5) as temperature5,
+            avg(temperature6) as temperature6,
+            avg(avg_temp) as avg_temp,
+            avg(maxtemp) as maxtemp,
+            offconf,
+            onconf
         FROM sensor_data
         WHERE test_id = {lasttest}
         GROUP BY 
@@ -172,7 +183,6 @@ def get_current_graph(trace, title):
             )
         )
     )
-
 
 
 ############# REGISTER CALLBACKS ############################
@@ -226,6 +236,19 @@ def register_callbacks(dash_app):
         r.set("power", "off")
         return True
 
+    @dash_app.callback(
+        Output('pidout', 'children'),
+        Input('autopid', 'value')
+    )
+    def update_pid(value):
+        if value is None:
+            raise PreventUpdate
+        if value is True:
+            r.set("autopid", 1)
+        elif value is False:
+            r.set("autopid", 0)
+        return 'The switch is {}.'.format(value)
+
 ##################### config ################################
     @dash_app.callback(
         Output('timeconf-knob-output', 'value'),
@@ -254,59 +277,128 @@ def register_callbacks(dash_app):
         r.set("offconf", value)
         return value
 
+    @dash_app.callback(
+        Output('maxtemp-display', 'value'),
+        [Input('maxtemp-input', 'value'),])
+    def update_offconf(value):
+        if value is None:
+            raise PreventUpdate
+        r.set("maxtemp", value)
+        return value
+
 ##################### chart history #########################
     @dash_app.callback(
         Output('dd-output-container', 'children'),
-        [Input('demo-dropdown', 'value')])
+        [Input('history-dropdown', 'value')])
     def update_output(value):
         return 'Test No. : "{}"'.format(value)
 
     @dash_app.callback(
             Output("time_series_chart_col", "children"),
-            [Input("demo-dropdown", "value")],
+            [Input("history-dropdown", "value")],
         )
     def get_time_series_chart(sensors_dropdown_value):
         df = get_sensor_time_series_data(sensors_dropdown_value)
         x = df["time"]
         y1 = df["temperature1"]
         y2 = df["temperature2"]
-        y3 = df["onconf"]
-        y4 = df["offconf"]
+        y3 = df["temperature3"]
+        y4 = df["temperature4"]
+        y5 = df["temperature5"]
+        y6 = df["temperature6"]
+        y7 = df["avg_temp"]
+        y8 = df["maxtemp"]
+        y9 = df["onconf"]
+        y10 = df["offconf"]
         title = f"Location: {sensors_dropdown_value} - Type: {sensors_dropdown_value}"
         fig = make_subplots()
         trace1 = go.Scatter(
             x=x,
             y=y1,
-            name="Temp1"
+            name="Temp1",
+            line = dict(color='lightblue', width=3, dash='dot')
         )
         trace2 = go.Scatter(
             x=x,
             y=y2,
-            name="Temp2"
+            name="Temp2",
+            line = dict(color='lightblue', width=3, dash='dot')
         )
-        trace3 = go.Bar(
+        trace3 = go.Scatter(
             x=x,
             y=y3,
-            name="onconf",
+            name="Temp3",
+            line = dict(color='lightblue', width=3, dash='dot')
         )
 
-        trace4 = go.Bar(
+        trace4 = go.Scatter(
             x=x,
             y=y4,
+            name="Temp4",
+            line = dict(color='lightblue', width=3, dash='dot')
+        )
+        
+        trace5 = go.Scatter(
+            x=x,
+            y=y5,
+            name="Temp5",
+            line = dict(color='lightblue', width=3, dash='dot')
+            
+        )
+        
+        trace6 = go.Scatter(
+            x=x,
+            y=y6,
+            name="Temp6",
+            line = dict(color='lightblue', width=3, dash='dot')
+        )
+        
+        trace7 = go.Scatter(
+            x=x,
+            y=y7,
+            name="avg_temp",
+            line = dict(color='royalblue', width=3)
+
+        )
+        
+        trace8 = go.Scatter(
+            x=x,
+            y=y8,
+            name="maxtemp",
+            line = dict(color='red', width=3)
+
+        )
+        
+        trace9 = go.Bar(
+            x=x,
+            y=y9,
+            name="onconf",
+        )
+        
+        trace10 = go.Bar(
+            x=x,
+            y=y10,
             name="offconf",
         )
+        
 
         fig.add_trace(trace1)
         fig.add_trace(trace2)
         fig.add_trace(trace3)
         fig.add_trace(trace4)
+        fig.add_trace(trace5)
+        fig.add_trace(trace6)
+        fig.add_trace(trace7)
+        fig.add_trace(trace8)
+        fig.add_trace(trace9)
+        fig.add_trace(trace10)
         graph1 = get_graph(fig, title)
-        graph2 = get_graph(trace2, title)
+        # graph2 = get_graph(trace2, title)
 
         return dbc.Col(
             [
                 dbc.Row(dbc.Col(graph1)),
-                dbc.Row(dbc.Col(graph2)),
+                # dbc.Row(dbc.Col(graph2)),
             ]
         )
 
@@ -320,41 +412,96 @@ def register_callbacks(dash_app):
         x = df["time"]
         y1 = df["temperature1"]
         y2 = df["temperature2"]
-        y3 = df["onconf"]
-        y4 = df["offconf"]
-
+        y3 = df["temperature3"]
+        y4 = df["temperature4"]
+        y5 = df["temperature5"]
+        y6 = df["temperature6"]
+        y7 = df["avg_temp"]
+        y8 = df["maxtemp"]
+        y9 = df["onconf"]
+        y10 = df["offconf"]
         title = f"Now"
         fig = make_subplots()
-
-
         trace1 = go.Scatter(
             x=x,
             y=y1,
-            name="Sensor 1"
+            name="Temp1",
+            line = dict(color='lightblue', width=3, dash='dot')
         )
-
         trace2 = go.Scatter(
             x=x,
             y=y2,
-            name="Sensor 2"
+            name="Temp2",
+            line = dict(color='lightblue', width=3, dash='dot')
         )
-        
-        trace3 = go.Bar(
+        trace3 = go.Scatter(
             x=x,
             y=y3,
-            name="onconf",
+            name="Temp3",
+            line = dict(color='lightblue', width=3, dash='dot')
         )
 
-        trace4 = go.Bar(
+        trace4 = go.Scatter(
             x=x,
             y=y4,
+            name="Temp4",
+            line = dict(color='lightblue', width=3, dash='dot')
+        )
+        
+        trace5 = go.Scatter(
+            x=x,
+            y=y5,
+            name="Temp5",
+            line = dict(color='lightblue', width=3, dash='dot')
+            
+        )
+        
+        trace6 = go.Scatter(
+            x=x,
+            y=y6,
+            name="Temp6",
+            line = dict(color='lightblue', width=3, dash='dot')
+        )
+        
+        trace7 = go.Scatter(
+            x=x,
+            y=y7,
+            name="avg_temp",
+            line = dict(color='royalblue', width=3)
+
+        )
+        
+        trace8 = go.Scatter(
+            x=x,
+            y=y8,
+            name="maxtemp",
+            line = dict(color='red', width=3)
+
+        )
+        
+        trace9 = go.Bar(
+            x=x,
+            y=y9,
+            name="onconf",
+        )
+        
+        trace10 = go.Bar(
+            x=x,
+            y=y10,
             name="offconf",
         )
+        
 
         fig.add_trace(trace1)
         fig.add_trace(trace2)
         fig.add_trace(trace3)
         fig.add_trace(trace4)
+        fig.add_trace(trace5)
+        fig.add_trace(trace6)
+        fig.add_trace(trace7)
+        fig.add_trace(trace8)
+        fig.add_trace(trace9)
+        fig.add_trace(trace10)
         fig.update_layout(showlegend=False)
 
         graph1 = get_current_graph(fig, title)

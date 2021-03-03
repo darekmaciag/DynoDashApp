@@ -35,23 +35,22 @@ class Sensors:
         self.timeconf = str(r.get("timeconf").decode())
         self.onconf = float(r.get("onconf").decode())
         self.offconf = float(r.get("offconf").decode())
+        self.maxtemp = float(r.get("maxtemp").decode())
         
-    def get_sensor_data(self, speed, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6, temperature7, temperature8, ):
-        self.speed = speed
+    def get_sensor_data(self, avgtemp, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6):
+        self.avgtemp = avgtemp
         self.temperature1 = temperature1
         self.temperature2 = temperature2
         self.temperature3 = temperature3
         self.temperature4 = temperature4
         self.temperature5 = temperature5
         self.temperature6 = temperature6
-        self.temperature7 = temperature7
-        self.temperature8 = temperature8
         with Database() as db:
-            query = """ INSERT INTO sensor_data(test_id, time, timeconf, onconf, offconf, speed, temperature1, temperature2) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"""
-            valuses = (self.testID, self.nowstamp, self.timeconf, self.onconf, self.offconf, self.speed, self.temperature1, self.temperature2)
+            query = """ INSERT INTO sensor_data(test_id, time, timeconf, onconf, offconf, maxtemp, avg_temp, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"""
+            valuses = (self.testID, self.nowstamp, self.timeconf, self.onconf, self.offconf, self.maxtemp, self.avgtemp, self.temperature1, self.temperature2, self.temperature3, self.temperature4, self.temperature5, self.temperature6)
             db.execute(query, valuses)
             db.close
-            updateSensorInfo(self.testID, self.timeconf, self.onconf, self.offconf, self.speed, self.temperature1, self.temperature2, self.temperature3, self.temperature4, self.temperature5, self.temperature6, self.temperature7, self.temperature8)
+            updateSensorInfo(self.testID, self.nowstamp, self.timeconf, self.onconf, self.offconf, self.maxtemp, self.avgtemp, self.temperature1, self.temperature2, self.temperature3, self.temperature4, self.temperature5, self.temperature6)
 
 
 class Tests:
@@ -88,31 +87,23 @@ class Tests:
             db.close
             updateTestInfo(testid, self.status, oldstarted, self.finished)
 
-def updateSensorInfo(testID, timeconf, onconf, offconf, speed, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6, temperature7, temperature8):
-    jsonFile = open("outputdata.json", "r") # Open the JSON file for reading
-    data = json.load(jsonFile) # Read the JSON into the buffer
-    jsonFile.close() # Close the JSON file
-    print("----record: ", testID, timeconf, onconf, offconf, speed, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6, temperature7, temperature8)
+def updateSensorInfo(testID, nowstamp, timeconf, onconf, offconf, maxtemp, avgtemp, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6):
+    print("----record: ", testID, nowstamp, timeconf, onconf, offconf, maxtemp, avgtemp, temperature1, temperature2, temperature3, temperature4, temperature5, temperature6)
+    r.mset({
+        "testID": testID,
+        "timeconf": timeconf,
+        "onconf": onconf,
+        "offconf": offconf,
+        "maxtemp": maxtemp,
+        "avgtemp": avgtemp,
+        "temperature1": temperature1,
+        "temperature2": temperature2,
+        "temperature3": temperature3,
+        "temperature4": temperature4,
+        "temperature5": temperature5,
+        "temperature6": temperature6,
+    })
 
-    ## Working with buffered content
-    data['testID'] = testID
-    data["timeconf"] = str(timeconf)
-    data["onconf"] = onconf
-    data["offconf"] = offconf
-    data["speed"] = speed
-    data["temperature1"] = temperature1
-    data["temperature2"] = temperature2
-    data["temperature3"] = temperature3
-    data["temperature4"] = temperature4
-    data["temperature5"] = temperature5
-    data["temperature6"] = temperature6
-    data["temperature7"] = temperature7
-    data["temperature8"] = temperature8
-
-    ## Save our changes to JSON file
-    jsonFile = open("outputdata.json", "w+")
-    jsonFile.write(json.dumps(data, indent=4))
-    jsonFile.close()
 
 def updateTestInfo(id, status, started, finished):
     print("-------------------------")
@@ -125,10 +116,3 @@ def updateTestInfo(id, status, started, finished):
         "started": str(started)[:19],
         "finished": str(finished)[:19],
     })
-
-
-# Tests().create_test(True)
-# time.sleep(1)
-# Tests().finish_test(False)
-# aa = datetime.now()
-# Sensors(datetime.now(),aa).get_sensor_data(1,1,1,1,1,1,1,1,1)

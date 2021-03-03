@@ -136,6 +136,8 @@ def onoff_setting_div():
                                         )
                                     )
                                 ]),
+                            dbc.Row(html.Div(id='output', className='hidden')),
+                            dbc.Row(html.Div(id='pidout', className='hidden')),
                             dbc.Col(
                                 lg=4,
                                 xs=6,
@@ -189,7 +191,11 @@ def onoff_setting_div():
         ]
     )
 
-def time_setting_div(timenow):
+def time_setting_div(timenow, pidstatus):
+    if pidstatus == 1:
+        pid = True
+    elif pidstatus == 0:
+        pid = False
     return dbc.Card(
         className="time-settings-tab",
         children=[
@@ -242,13 +248,11 @@ def time_setting_div(timenow):
                                 )
                             ),
                             dbc.Row(
-                                dbc.Button(                               
-                                    [dbc.Spinner(size="sm")],
-                                    id='output',
-                                    color="primary",
-                                    disabled=True,
-                                    block=True
-                                )
+                                daq.ToggleSwitch(
+                                        id='autopid',
+                                        value=pid,
+                                        label="Auto"
+                                    )
                             )
                         ]
                         )
@@ -258,7 +262,7 @@ def time_setting_div(timenow):
         ]
     )
 
-def connections_setting_div(onconf, offconf):
+def connections_setting_div(onconf, offconf, maxtemp):
     return dbc.Card(
         className="connections-settings-tab",
         children=[
@@ -268,7 +272,7 @@ def connections_setting_div(onconf, offconf):
                     className="connections-buttons",
                     children=[
                         dbc.Col(
-                            xs=6,
+                            xs=4,
                             children=[
                                 dbc.Row(
                                     dbc.Col(
@@ -277,9 +281,10 @@ def connections_setting_div(onconf, offconf):
                                             id="onconf-input",
                                             label="ON Config (s)",
                                             labelPosition="bottom",
-                                            size=90,
+                                            size=60,
                                             max=10,
-                                            min=0.1,
+                                            min=0.05,
+                                            scale={'start':0.05, 'labelInterval': 5, 'interval': 1}
                                         )
                                     )
                                 ),
@@ -296,7 +301,7 @@ def connections_setting_div(onconf, offconf):
                                 )
                             ]),
                         dbc.Col(
-                            xs=6,
+                            xs=4,
                             children=[
                                 dbc.Row(
                                     dbc.Col(
@@ -305,9 +310,11 @@ def connections_setting_div(onconf, offconf):
                                             id="offconf-input",
                                             label="OFF Config (s)",
                                             labelPosition="bottom",
-                                            size=90,
+                                            size=60,
                                             max=10,
-                                            min=0.1,
+                                            min=0.05,
+                                            scale={'start':0.05, 'labelInterval': 5, 'interval': 1}
+
                                         )
                                     )
                                 ),
@@ -322,6 +329,36 @@ def connections_setting_div(onconf, offconf):
                                         )
                                     )
                                 )
+                            ]),
+                            dbc.Col(
+                            xs=4,
+                            children=[
+                                dbc.Row(
+                                    dbc.Col(
+                                        daq.Knob(
+                                            value=maxtemp,
+                                            id="maxtemp-input",
+                                            label="Max temp (C)",
+                                            labelPosition="bottom",
+                                            size=60,
+                                            min=20,
+                                            max=100,
+                                            scale={'start':20, 'labelInterval': 10, 'interval': 10}
+
+                                        )
+                                    )
+                                ),
+                                dbc.Row(
+                                    dbc.Col(
+                                        daq.LEDDisplay(
+                                            id="maxtemp-display",
+                                            size=15,
+                                            value=offconf,
+                                            label="Max Temp (C)",
+                                            labelPosition="bottom",
+                                        )
+                                    )
+                                )
                             ])
                     ]
                 )
@@ -332,7 +369,9 @@ def connections_setting_div(onconf, offconf):
 def home():
     onconf = float(r.get("onconf").decode())
     offconf = float(r.get("offconf").decode())
+    maxtemp = float(r.get("maxtemp").decode())
     timenow = str(r.get("timeconf").decode())
+    pidstatus = int(r.get("autopid").decode())
     return dbc.Row(
         children=[
             # LEFT PANEL - TEST SETTINGS
@@ -342,8 +381,8 @@ def home():
                 xs=12,
                 children=[
                     onoff_setting_div(),
-                    time_setting_div(timenow),
-                    connections_setting_div(onconf, offconf),
+                    time_setting_div(timenow, pidstatus),
+                    connections_setting_div(onconf, offconf, maxtemp),
                 ],
             ),
             # RIGHT PANEL - TEST INFO
@@ -395,7 +434,7 @@ def history():
                 dbc.Row([
                     dbc.Col(
                         dcc.Dropdown(
-                                id='demo-dropdown',
+                                id='history-dropdown',
                                 options=types,
                                 value=types[0]["value"]
                             )
