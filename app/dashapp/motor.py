@@ -8,16 +8,22 @@ import redis
 import RPi.GPIO as GPIO
 from w1thermsensor import AsyncW1ThermSensor
 import asyncio
+from app.dashapp.PID import PID
+import os.path
 
 r=redis.Redis()
      
 async def task2():
     while True:
-        sensor1 = await AsyncW1ThermSensor(sensor_id='8a1902ae86ff').get_temperature()
-        sensor2 = await AsyncW1ThermSensor(sensor_id='8a1902c5a4ff').get_temperature()
-        print(sensor2, sensor1)
-        await asyncio.sleep(1)
-        Sensors(datetime.datetime.now()).get_sensor_data(1, sensor1, sensor2,3,4,5,6,7,8)
+        sensor1 = await AsyncW1ThermSensor(sensor_id='0008014a2604').get_temperature()
+        sensor2 = await AsyncW1ThermSensor(sensor_id='0008014a2f35').get_temperature()
+        sensor3 = await AsyncW1ThermSensor(sensor_id='0008014a3e9b').get_temperature()
+        sensor4 = await AsyncW1ThermSensor(sensor_id='0008014a6cd3').get_temperature()
+        sensor5 = await AsyncW1ThermSensor(sensor_id='000801f164a6').get_temperature()
+        sensor6 = await AsyncW1ThermSensor(sensor_id='000004bc4cae').get_temperature()
+        print(sensor1, sensor2,sensor3,sensor4,sensor5,sensor6)
+        await asyncio.sleep(0.1)
+        Sensors(datetime.datetime.now()).get_sensor_data(1, sensor1, sensor2,sensor3,sensor4,sensor5,sensor6,7,8)
 
 async def cycle(pin):
     GPIO.output(pin, GPIO.HIGH)
@@ -38,8 +44,8 @@ def cleanup(left, right):
         GPIO.cleanup(channel)
 
 async def task1():
-    left = 20
-    right = 21
+    left = 5
+    right = 6
     await setup(left, right)
     wlaczony = 0
     try:
@@ -66,4 +72,46 @@ async def task1():
 
 
 async def task3():
-    pass
+    targetT = 35
+    P = 10
+    I = 1
+    D = 1
+
+    pid = PID(P, I, D)
+    pid.SetPoint = targetT
+    pid.setSampleTime(1)
+
+    def readConfig ():
+        global targetT
+        with open ('pid.conf', 'r') as f:
+            config = f.readline().split(',')
+            pid.SetPoint = float(config[0])
+            targetT = pid.SetPoint
+            pid.setKp (float(config[1]))
+            pid.setKi (float(config[2]))
+            pid.setKd (float(config[3]))
+
+    def createConfig ():
+        if not os.path.isfile('pid.conf'):
+            with open ('pid.conf', 'w') as f:
+                f.write('%s,%s,%s,%s'%(targetT,P,I,D))
+
+    createConfig()
+
+    while 1:
+        readConfig()
+        #read temperature data
+        f = open("demofile.txt", "r")
+        aa = int(f.read())
+        temperature = aa
+
+        pid.update(temperature)
+        targetPwm = pid.output
+        print("a", targetPwm)
+        targetPwm = max(min( int(targetPwm), 100 ),0)
+        print("b", targetPwm)
+        print("Target: %.1f C | Current: %.1f C | PWM: %s %%"%(targetT, temperature, targetPwm))
+
+        # Set PWM expansion channel 0 to the target setting
+        print(targetPwm)
+        await asyncio.sleep(0.5)
