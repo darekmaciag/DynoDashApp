@@ -1,5 +1,5 @@
 import redis
-r= redis.Redis()
+r= redis.Redis()_dash-global-error-container
 r.mset({
     "power": "off",
     "autopid": 0,

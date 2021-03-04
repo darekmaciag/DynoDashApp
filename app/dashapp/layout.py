@@ -38,15 +38,15 @@ def get_navbar():
                     ),
                     href="/",
                 ),
-                dbc.NavbarToggler(id="navbar-toggler2"),
+                dbc.NavbarToggler(id="navbar-toggler"),
                 dbc.Collapse(
                     dbc.Nav(
                         [dbc.NavItem(dbc.NavLink("Home", href="/")),
                          dbc.NavItem(dbc.NavLink("History", href="/history"))],
-                        className="ml-auto", navbar=True
+                        className="ml-auto flex-nowrap mt-3 mt-md-0", navbar=True
                     ),
-                    id="navbar-collapse2",
-                    navbar=True,
+                    id="navbar-collapse",
+                    navbar=True
                 ),
             ]
         ),

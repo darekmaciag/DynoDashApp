@@ -9,7 +9,7 @@ def register_dashapps(app):
     Register Dash apps with the Flask app
     """
     VALID_USERNAME_PASSWORD_PAIRS = {
-    'hello': 'world'
+    'admin': 'password'
     }
 
     external_stylesheets = [dbc.themes.SKETCHY]
@@ -39,11 +39,12 @@ def register_dashapps(app):
     )
 
     dashapp.enable_dev_tools(
-    dev_tools_ui=True,
-    dev_tools_serve_dev_bundles=True,
+    dev_tools_ui=False,
+    dev_tools_serve_dev_bundles=False,
+    dev_tools_hot_reload=False,
     )
 
-    dashapp.title = 'Dash Charts in Single-Page Application'
+    dashapp.title = 'DynoDashApp'
     auth = dash_auth.BasicAuth(
         dashapp,
         VALID_USERNAME_PASSWORD_PAIRS
