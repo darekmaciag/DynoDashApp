@@ -31,7 +31,7 @@ def get_navbar():
                     dbc.Row(
                         [
                             dbc.Col(html.Img(src=PLOTLY_LOGO, height="30px")),
-                            dbc.Col(dbc.NavbarBrand("Badanie częstości łączeń silnika", className="ml-2")),
+                            dbc.Col(dbc.NavbarBrand("Badanie czestosci laczen silnika", className="ml-2")),
                         ],
                         align="center",
                         no_gutters=False,
@@ -66,7 +66,7 @@ def test_info():
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.Div(id="test-id"),
+                        html.Div(id="test-id", className="test-info"),
                     )
                 )
             ]),
@@ -78,7 +78,7 @@ def test_info():
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.Div(id="test-started"),
+                        html.Div(id="test-started", className="test-info"),
                     )
                 )
             ]),
@@ -90,7 +90,7 @@ def test_info():
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.Div(id="test-finished"),
+                        html.Div(id="test-finished", className="test-info"),
                     )
                 )
             ]),
@@ -102,7 +102,7 @@ def test_info():
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.Div(id="test-status"),
+                        html.Div(id="test-status", className="test-info"),
                     )
                 )
             ]),

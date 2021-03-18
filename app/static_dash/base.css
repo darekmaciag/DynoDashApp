@@ -43,11 +43,21 @@
     display: block;
 }
 
+.test-info {
+    font-size: 17px;
+}
+
 body {
     background-color: #ffffff;
     background-image:  linear-gradient(#f1f1f1 1.8px, transparent 1.8px), linear-gradient(to right, #f1f1f1 1.8px, #ffffff 1.8px);
     background-size: 36px 36px;}
     
+@media (max-width: 1200px) {
+    .test-info {
+        font-size: 14px;
+    }
+}
+
 @media (max-width: 768px) {
     .col {
         padding-right:11px;
@@ -63,6 +73,10 @@ body {
     .Select-value-label {
         font-size: 13px;
     }
+    
+    .test-info {
+        font-size: 13px;
+    }
 }
 
 @media (max-width: 390px) {
@@ -71,6 +85,10 @@ body {
     }
 
     .Select-value-label {
+        font-size: 11px;
+    }
+
+    .test-info {
         font-size: 11px;
     }
 }

@@ -39,8 +39,8 @@ def register_dashapps(app):
     )
 
     dashapp.enable_dev_tools(
-    dev_tools_ui=True,
-    dev_tools_serve_dev_bundles=True,
+    dev_tools_ui=False,
+    dev_tools_serve_dev_bundles=False,
     dev_tools_hot_reload=False,
     )
 
