@@ -51,7 +51,6 @@ def gettimedelta():
     timeconfig = str(r.get("timeconf").decode())
     (h, m, s) = timeconfig.split(':')
     timedelda = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
-    print(timedelda)
     return timedelda  
 
 async def run_motor():
@@ -61,7 +60,7 @@ async def run_motor():
     semaphore.lock()
     Tests().create_test()
     r.set("power", "on")
-    print(f"Callback: {threading.current_thread().name}")
+    # print(f"Callback: {threading.current_thread().name}")
     func_task = asyncio.create_task(some_func())
     cancel_task = asyncio.ensure_future(cancel(func_task))
     try:
@@ -312,7 +311,6 @@ def register_callbacks(dash_app):
         y8 = df["maxtemp"]
         y9 = df["onconf"]
         y10 = df["offconf"]
-        title = f"Location: {sensors_dropdown_value} - Type: {sensors_dropdown_value}"
         fig = make_subplots()
         trace1 = go.Scatter(
             x=x,
@@ -419,12 +417,10 @@ def register_callbacks(dash_app):
             )
             )
         graph1 = get_graph(fig)
-        # graph2 = get_graph(trace2, title)
 
         return dbc.Col(
             [
                 dbc.Row(dbc.Col(graph1)),
-                # dbc.Row(dbc.Col(graph2)),
             ]
         )
 
@@ -446,7 +442,6 @@ def register_callbacks(dash_app):
         y8 = df["maxtemp"]
         y9 = df["onconf"]
         y10 = df["offconf"]
-        title = f"Now"
         fig = make_subplots()
         trace1 = go.Scatter(
             x=x,

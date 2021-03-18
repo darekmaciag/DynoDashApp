@@ -433,7 +433,6 @@ def home():
 ##################### HISTORY #########################
 def get_sensor_datas():
     sql = """
-        --Get the labels and underlying values for the dropdown menu "children"
         SELECT 
             distinct 
             id || ' - Started: ' || to_char(started, 'DD-MM-YYYY HH24:MI:SS') || ' - Finished: ' || to_char(finished, 'DD-MM-YYYY HH24:MI:SS')as label,
@@ -481,8 +480,6 @@ def history():
 
 ###################### MAIN ###########################
 def get_layout():
-    """Function to get Dash's "HTML" layout"""
-
     return dbc.Container(
                 fluid=True,
                 className="main",
