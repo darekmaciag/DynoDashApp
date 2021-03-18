@@ -195,6 +195,16 @@ def register_callbacks(dash_app):
             return "00:00:00", False
 
     @dash_app.callback([
+        Output('onconf-input', 'value'),
+        Output('offconf-input', 'value'),
+    ],
+        Input('interval', 'n_intervals'))
+    def update_inputs(n_intervals):
+        onconf = float(r.get("onconf").decode())
+        offconf = float(r.get("offconf").decode())
+        return onconf, offconf
+
+    @dash_app.callback([
         Output('test-started', 'children'),
         Output('test-finished', 'children'),
         Output('test-status', 'children'),

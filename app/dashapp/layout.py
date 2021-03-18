@@ -287,7 +287,7 @@ def connections_setting_div(onconf, offconf, maxtemp):
                                             # scale={'start':0.05, 'labelInterval': 5, 'interval': 1}
                                             step=0.01,
                                             vertical=True,
-                                            updatemode="mouseup",
+                                            updatemode="drag",
                                             marks={i: '{}'.format(1.0 * i) for i in range(11)},
                                         )
                                     )
@@ -320,7 +320,7 @@ def connections_setting_div(onconf, offconf, maxtemp):
                                             # scale={'start':0.05, 'labelInterval': 5, 'interval': 1}
                                             step=0.01,
                                             vertical=True,
-                                            updatemode="mouseup",
+                                            updatemode="drag",
                                             marks={i: '{}'.format(1.0 * i) for i in range(11)},
 
                                         )
@@ -421,7 +421,7 @@ def home():
                         dbc.Row(
                         className="right-panel-graph",
                         children=[dbc.Col(id="time_series_chart_col_now"),
-                        dcc.Interval(id='interval', interval=50000),
+                        dcc.Interval(id='interval', interval=1000),
                         ],
                         ),
                     ])
