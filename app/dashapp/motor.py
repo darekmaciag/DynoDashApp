@@ -87,8 +87,8 @@ async def task1():
 async def task3():
     targetT = float(r.get("maxtemp").decode())
     P = 0.01
-    I = -1
-    D = 1
+    I = -0.01
+    D = 0
 
     pid = PID(P, I, D)
     pid.setpoint = targetT
@@ -102,5 +102,5 @@ async def task3():
         targetPwm = round(targetPwm,2)
         print("b", targetPwm)
         r.set("onconf", targetPwm)
-
+        r.set("offconf", targetPwm)
         await asyncio.sleep(5)

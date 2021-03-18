@@ -276,15 +276,19 @@ def connections_setting_div(onconf, offconf, maxtemp):
                             children=[
                                 dbc.Row(
                                     dbc.Col(
-                                        daq.Knob(
+                                        daq.Slider(
                                             value=onconf,
                                             id="onconf-input",
-                                            label="ON Config (s)",
-                                            labelPosition="bottom",
-                                            size=60,
+                                            # label="ON Config (s)",
+                                            # labelPosition="bottom",
+                                            size=160,
                                             max=10,
                                             min=0.05,
-                                            scale={'start':0.05, 'labelInterval': 5, 'interval': 1}
+                                            # scale={'start':0.05, 'labelInterval': 5, 'interval': 1}
+                                            step=0.01,
+                                            vertical=True,
+                                            updatemode="mouseup",
+                                            marks={i: '{}'.format(1.0 * i) for i in range(11)},
                                         )
                                     )
                                 ),
@@ -305,15 +309,19 @@ def connections_setting_div(onconf, offconf, maxtemp):
                             children=[
                                 dbc.Row(
                                     dbc.Col(
-                                        daq.Knob(
+                                        daq.Slider(
                                             value=offconf,
                                             id="offconf-input",
-                                            label="OFF Config (s)",
-                                            labelPosition="bottom",
-                                            size=60,
+                                            # label="OFF Config (s)",
+                                            # labelPosition="bottom",
+                                            size=160,
                                             max=10,
                                             min=0.05,
-                                            scale={'start':0.05, 'labelInterval': 5, 'interval': 1}
+                                            # scale={'start':0.05, 'labelInterval': 5, 'interval': 1}
+                                            step=0.01,
+                                            vertical=True,
+                                            updatemode="mouseup",
+                                            marks={i: '{}'.format(1.0 * i) for i in range(11)},
 
                                         )
                                     )
@@ -335,15 +343,29 @@ def connections_setting_div(onconf, offconf, maxtemp):
                             children=[
                                 dbc.Row(
                                     dbc.Col(
-                                        daq.Knob(
+                                        daq.Slider(
                                             value=maxtemp,
                                             id="maxtemp-input",
-                                            label="Max temp (C)",
-                                            labelPosition="bottom",
-                                            size=60,
+                                            # label="Max temp (C)",
+                                            # labelPosition="bottom",
+                                            size=160,
                                             min=20,
                                             max=100,
-                                            scale={'start':20, 'labelInterval': 10, 'interval': 10}
+                                            # scale={'start':20, 'labelInterval': 10, 'interval': 10}
+                                            step=0.1,
+                                            vertical=True,
+                                            updatemode="mouseup",
+                                            marks={
+                                                20: {'label': '20°C', 'style': {'color': '#77b0b1'}},
+                                                30: {'label': '30°C', 'style': {'color': '#77b0b1'}},
+                                                40: {'label': '40°C'},
+                                                50: {'label': '50°C'},
+                                                60: {'label': '60°C', 'style': {'color': '#ffd000'}},
+                                                70: {'label': '70°C', 'style': {'color': '#ffd000'}},
+                                                80: {'label': '80°C', 'style': {'color': '#ffd000'}},
+                                                90: {'label': '90°C', 'style': {'color': '#f50'}},
+                                                100: {'label': '100°C', 'style': {'color': '#f50'}},
+                                                },
 
                                         )
                                     )
