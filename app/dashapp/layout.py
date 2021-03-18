@@ -247,8 +247,8 @@ def time_setting_div(timenow, pidstatus):
                                     )
                                 )
                             ),
-                            dbc.Row(
-                                daq.ToggleSwitch(
+                            dbc.Row(className="center",
+                                    children=daq.ToggleSwitch(
                                         id='autopid',
                                         value=pid,
                                         label="Auto"
@@ -275,8 +275,8 @@ def connections_setting_div(onconf, offconf, maxtemp):
                             xs=4,
                             children=[
                                 dbc.Row(
-                                    dbc.Col(
-                                        daq.Slider(
+                                    dbc.Col(className="centerslider",
+                                    children=daq.Slider(
                                             value=onconf,
                                             id="onconf-input",
                                             # label="ON Config (s)",
@@ -308,8 +308,8 @@ def connections_setting_div(onconf, offconf, maxtemp):
                             xs=4,
                             children=[
                                 dbc.Row(
-                                    dbc.Col(
-                                        daq.Slider(
+                                    dbc.Col(className="centerslider",
+                                    children=daq.Slider(
                                             value=offconf,
                                             id="offconf-input",
                                             # label="OFF Config (s)",
@@ -342,8 +342,8 @@ def connections_setting_div(onconf, offconf, maxtemp):
                             xs=4,
                             children=[
                                 dbc.Row(
-                                    dbc.Col(
-                                        daq.Slider(
+                                    dbc.Col(className="centerslider",
+                                    children=daq.Slider(
                                             value=maxtemp,
                                             id="maxtemp-input",
                                             # label="Max temp (C)",
@@ -421,7 +421,7 @@ def home():
                         dbc.Row(
                         className="right-panel-graph",
                         children=[dbc.Col(id="time_series_chart_col_now"),
-                        dcc.Interval(id='interval', interval=500),
+                        dcc.Interval(id='interval', interval=50000),
                         ],
                         ),
                     ])
@@ -431,7 +431,7 @@ def home():
     ),
 
 ##################### HISTORY #########################
-def get_sensor_types():
+def get_sensor_datas():
     sql = """
         --Get the labels and underlying values for the dropdown menu "children"
         SELECT 
@@ -447,7 +447,7 @@ def get_sensor_types():
         return types
 
 def history():
-    types = get_sensor_types()
+    types = get_sensor_datas()
     return dbc.Row(
         className="history",
         children=[
@@ -470,7 +470,7 @@ def history():
                             type="border",
                             children=[
                                 html.Div(id="dd-output-container"),
-                                html.Div(id="time_series_chart_col"),
+                                dbc.Row(id="time_series_chart_col"),
                             ]
                         )
                     )

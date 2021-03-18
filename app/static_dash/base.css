@@ -12,6 +12,9 @@
     margin-right:auto;
     margin-left:auto
 }
+.Select {
+    z-index: 1002;
+  }
 
 .card{
     padding-bottom: 10px;
@@ -29,7 +32,27 @@
     padding: 5px;
 }
 
+.centerslider{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.center{
+    display: block;
+}
+
 body {
     background-color: #ffffff;
     background-image:  linear-gradient(#f1f1f1 1.8px, transparent 1.8px), linear-gradient(to right, #f1f1f1 1.8px, #ffffff 1.8px);
     background-size: 36px 36px;}
+
+@media (max-width: 768px) {
+    .col {
+        padding-right:11px;
+        padding-left:11px;
+        margin-right:auto;
+        margin-left:auto
+    }
+    }

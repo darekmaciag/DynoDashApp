@@ -107,25 +107,23 @@ def get_sensor_time_series_data(test_id):
         df = pd.DataFrame(rows, columns=columns)
     return df
 
-def get_graph(trace, title):
+def get_graph(trace):
     return dcc.Graph(
         config=dict(
-            displayModeBar=True
+            displayModeBar=True,
+            displaylogo= False,
+            responsive=True,
+            modeBarButtonsToAdd= [
+                'drawline' , 
+                'drawopenpath' , 
+                'drawclosedpath' , 
+                'drawcircle' , 
+                'drawrect' , 
+                'eraseshape' 
+                ]
         ),
         figure=go.Figure(
             data=trace,
-            layout=go.Layout(
-                title=title,
-                height=1700,
-                plot_bgcolor="white",
-                xaxis=dict(
-                    autorange=True,
-                    type = "date",
-                    rangeslider = dict(
-                        visible = True
-                    )
-                )
-            )
         )
     )
 
@@ -166,21 +164,15 @@ def now_data():
     # print("columns",columns)
     return df
 
-def get_current_graph(trace, title):
+def get_current_graph(trace):
     return dcc.Graph(
         config=dict(
-            displayModeBar=False
+            displayModeBar=False,
+            displaylogo=False,
+            responsive=True
         ),
         figure=go.Figure(
             data=trace,
-            layout=go.Layout(
-                title=title,
-                plot_bgcolor="white",
-                xaxis=dict(
-                    autorange=True,
-                    type = "date",
-                )
-            )
         )
     )
 
@@ -316,18 +308,21 @@ def register_callbacks(dash_app):
             x=x,
             y=y1,
             name="Temp1",
+            legendgroup="temp",
             line = dict(color='lightblue', width=3, dash='dot')
         )
         trace2 = go.Scatter(
             x=x,
             y=y2,
             name="Temp2",
+            legendgroup="temp",
             line = dict(color='lightblue', width=3, dash='dot')
         )
         trace3 = go.Scatter(
             x=x,
             y=y3,
             name="Temp3",
+            legendgroup="temp",
             line = dict(color='lightblue', width=3, dash='dot')
         )
 
@@ -335,6 +330,7 @@ def register_callbacks(dash_app):
             x=x,
             y=y4,
             name="Temp4",
+            legendgroup="temp",
             line = dict(color='lightblue', width=3, dash='dot')
         )
         
@@ -342,6 +338,7 @@ def register_callbacks(dash_app):
             x=x,
             y=y5,
             name="Temp5",
+            legendgroup="temp",
             line = dict(color='lightblue', width=3, dash='dot')
             
         )
@@ -350,6 +347,7 @@ def register_callbacks(dash_app):
             x=x,
             y=y6,
             name="Temp6",
+            legendgroup="temp",
             line = dict(color='lightblue', width=3, dash='dot')
         )
         
@@ -372,12 +370,14 @@ def register_callbacks(dash_app):
         trace9 = go.Bar(
             x=x,
             y=y9,
+            legendgroup="connections",
             name="onconf",
         )
         
         trace10 = go.Bar(
             x=x,
             y=y10,
+            legendgroup="connections",
             name="offconf",
         )
         
@@ -392,7 +392,23 @@ def register_callbacks(dash_app):
         fig.add_trace(trace8)
         fig.add_trace(trace9)
         fig.add_trace(trace10)
-        graph1 = get_graph(fig, title)
+        fig.update_layout(
+            showlegend=True,
+            autosize=True,
+            height=600,
+            margin=dict(
+                l=1,
+                r=1,
+                b=1,
+                t=30,
+                pad=0),
+            legend=dict(
+                orientation="h",
+                xanchor="center",
+                x=0.5
+            )
+            )
+        graph1 = get_graph(fig)
         # graph2 = get_graph(trace2, title)
 
         return dbc.Col(
@@ -502,9 +518,19 @@ def register_callbacks(dash_app):
         fig.add_trace(trace8)
         fig.add_trace(trace9)
         fig.add_trace(trace10)
-        fig.update_layout(showlegend=False)
+        fig.update_layout(
+            showlegend=False,
+            autosize=True,
+            height=534,
+            margin=dict(
+            l=5,
+            r=5,
+            b=5,
+            t=5,
+            pad=0),
+            )
 
-        graph1 = get_current_graph(fig, title)
+        graph1 = get_current_graph(fig)
 
         return html.Div(
             [
